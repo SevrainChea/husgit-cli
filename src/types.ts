@@ -41,6 +41,8 @@ export interface BranchPair {
   targetBranch: string;
 }
 
+export type Direction = 'release' | 'backport';
+
 export interface OpenMergeRequest {
   project: ProjectConfig;
   group: string;
@@ -48,6 +50,7 @@ export interface OpenMergeRequest {
   targetEnv: string;
   sourceBranch: string;
   targetBranch: string;
+  direction: Direction;
   mrId?: string;
   mrUrl?: string;
   state?: string;
