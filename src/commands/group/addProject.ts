@@ -98,12 +98,6 @@ async function runGroupAddProject(
         `Branch for "${env.name}" environment:`,
         async (term) => {
           if (term) {
-            const filtered = branches.filter((b) =>
-              b.toLowerCase().includes(term.toLowerCase()),
-            );
-            if (filtered.length > 0) {
-              return filtered.map((b) => ({ name: b, value: b }));
-            }
             const remote = await client.getProjectBranches(
               project.fullPath,
               term,
