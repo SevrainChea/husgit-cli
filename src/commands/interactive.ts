@@ -9,6 +9,7 @@ type MenuAction =
   | 'release'
   | 'backport'
   | 'status'
+  | 'config'
   | 'exit';
 
 type GroupAction = 'add' | 'add-project' | 'list' | 'remove' | 'back';
@@ -38,6 +39,7 @@ export async function interactiveMenu(): Promise<void> {
     { name: 'Release', value: 'release' },
     { name: 'Back-port', value: 'backport' },
     { name: 'Status', value: 'status' },
+    { name: 'Export Config', value: 'config' },
     { name: 'Exit', value: 'exit' },
   ]);
 
@@ -63,6 +65,13 @@ export async function interactiveMenu(): Promise<void> {
       const { statusCommand } = await import('./status.js');
       const cmd = statusCommand();
       await cmd.parseAsync(['node', 'husgit', 'status']);
+      break;
+    }
+
+    case 'config': {
+      const { configExportCommand } = await import('./config/export.js');
+      const cmd = configExportCommand();
+      await cmd.parseAsync(['node', 'husgit', 'export']);
       break;
     }
 

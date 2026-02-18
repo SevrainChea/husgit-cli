@@ -7,6 +7,7 @@ import { groupRemoveCommand } from './commands/group/remove.js';
 import { releaseCommand } from './commands/release.js';
 import { backportCommand } from './commands/backport.js';
 import { statusCommand } from './commands/status.js';
+import { configCommand } from './commands/config/index.js';
 
 export function createProgram(): Command {
   const program = new Command();
@@ -35,6 +36,9 @@ export function createProgram(): Command {
 
   // Status
   program.addCommand(statusCommand());
+
+  // Config
+  program.addCommand(configCommand());
 
   return program;
 }
