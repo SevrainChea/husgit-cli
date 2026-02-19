@@ -22,34 +22,55 @@ export async function promptForUpdate(
     )
   );
 
-  const action = await select({
-    message: 'What would you like to do?',
-    choices: [
-      { name: 'Install now', value: 'install' },
-      { name: 'Skip for now', value: 'skip' },
-      { name: 'Do not show again', value: 'decline' },
-    ],
-  });
-
-  if (action === 'install') {
-    const packageManager = await select<'npm' | 'pnpm' | 'yarn'>({
-      message: 'Choose your package manager:',
+  try {
+    const action = await select({
+      message: 'What would you like to do?',
       choices: [
-        { name: 'npm', value: 'npm' },
-        { name: 'pnpm', value: 'pnpm' },
-        { name: 'yarn', value: 'yarn' },
+        { name: 'Install now', value: 'install' },
+        { name: 'Skip for now', value: 'skip' },
+        { name: 'Do not show again', value: 'decline' },
       ],
     });
 
-    const command = INSTALL_COMMANDS[packageManager];
-    console.log(
-      chalk.green(`\nRun the following command to update:\n\n  ${command}\n`)
-    );
+    if (action === 'install') {
+      let packageManager: 'npm' | 'pnpm' | 'yarn';
+      try {
+        packageManager = await select<'npm' | 'pnpm' | 'yarn'>({
+          message: 'Choose your package manager:',
+          choices: [
+            { name: 'npm', value: 'npm' },
+            { name: 'pnpm', value: 'pnpm' },
+            { name: 'yarn', value: 'yarn' },
+          ],
+        });
+      } catch {
+        // If user cancels package manager selection, treat as skip
+        return { action: 'skip' };
+      }
 
-    return { action: 'install', packageManager };
+      const command = INSTALL_COMMANDS[packageManager];
+      if (!command) {
+        console.log(chalk.red('Unknown package manager'));
+        return { action: 'decline' };
+      }
+
+      console.log(
+        chalk.green(`\nRun the following command to update:\n\n  ${command}\n`)
+      );
+
+      return { action: 'install', packageManager };
+    }
+
+    // At this point action is not 'install', so it must be 'skip' or 'decline'
+    if (action === 'skip' || action === 'decline') {
+      return { action };
+    }
+    // Fallback (should never reach)
+    return { action: 'decline' };
+  } catch {
+    // If user interrupts the first prompt, decline the update
+    return { action: 'decline' };
   }
-
-  return { action: action as 'skip' | 'decline' };
 }
 
 export function showUpdateWarning(
