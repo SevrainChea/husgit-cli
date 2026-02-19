@@ -1,4 +1,4 @@
-import { Client, createClient, fetchExchange } from '@urql/core';
+import { Client, createClient, fetchExchange, type OperationResult } from '@urql/core';
 import axios, { type AxiosInstance } from 'axios';
 import type { GitlabProject } from '../types.js';
 import {
@@ -8,6 +8,13 @@ import {
   getProjectOpenedMergeRequestBySourceAndTarget,
   updateProjectMergeRequest,
 } from './queries.js';
+
+interface GetProjectsData {
+  projects?: {
+    nodes: Array<{ id: string; nameWithNamespace: string; fullPath: string }>;
+    pageInfo?: { hasNextPage: boolean; endCursor: string | null };
+  };
+}
 
 export class GitlabClient {
   private gqlClient: Client;
@@ -49,12 +56,13 @@ export class GitlabClient {
     let after: string | null = null;
 
     while (true) {
-      const { data, error } = await this.gqlClient
-        .query(getProjects, { membership: true, after })
+      const result: OperationResult<GetProjectsData> = await this.gqlClient
+        .query<GetProjectsData>(getProjects, { membership: true, after })
         .toPromise();
 
-      if (error) throw new Error(`Failed to fetch projects: ${error.message}`);
+      if (result.error) throw new Error(`Failed to fetch projects: ${result.error.message}`);
 
+      const data: GetProjectsData | undefined = result.data;
       const nodes = data?.projects?.nodes || [];
       for (const project of nodes) {
         allProjects.push({
@@ -66,7 +74,7 @@ export class GitlabClient {
 
       const pageInfo = data?.projects?.pageInfo;
       if (!pageInfo?.hasNextPage) break;
-      after = pageInfo.endCursor;
+      after = pageInfo.endCursor ?? null;
     }
 
     return allProjects;
