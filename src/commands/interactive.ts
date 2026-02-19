@@ -68,14 +68,14 @@ export async function interactiveMenu(): Promise<void> {
       // Dynamic import to avoid circular deps
       const { statusCommand } = await import('./status.js');
       const cmd = statusCommand();
-      await cmd.parseAsync(['node', 'husgit', 'status']);
+      await cmd.parseAsync(['node', 'status']);
       break;
     }
 
     case 'config': {
       const { configExportCommand } = await import('./config/export.js');
       const cmd = configExportCommand();
-      await cmd.parseAsync(['node', 'husgit', 'export']);
+      await cmd.parseAsync(['node', 'export']);
       break;
     }
 
@@ -99,7 +99,7 @@ async function groupsMenu(): Promise<void> {
       const name = await promptInput('Group name:');
       const { groupAddCommand } = await import('./group/add.js');
       const cmd = groupAddCommand();
-      await cmd.parseAsync(['node', 'husgit', 'group', 'add', name]);
+      await cmd.parseAsync(['node', 'add', name]);
       break;
     }
 
@@ -116,14 +116,14 @@ async function groupsMenu(): Promise<void> {
       );
       const { groupAddProjectCommand } = await import('./group/addProject.js');
       const cmd = groupAddProjectCommand();
-      await cmd.parseAsync(['node', 'husgit', 'group', 'add-project', group]);
+      await cmd.parseAsync(['node', 'add-project', group]);
       break;
     }
 
     case 'list': {
       const { groupListCommand } = await import('./group/list.js');
       const cmd = groupListCommand();
-      await cmd.parseAsync(['node', 'husgit', 'group', 'list']);
+      await cmd.parseAsync(['node', 'list']);
       break;
     }
 
@@ -140,7 +140,7 @@ async function groupsMenu(): Promise<void> {
       );
       const { groupRemoveCommand } = await import('./group/remove.js');
       const cmd = groupRemoveCommand();
-      await cmd.parseAsync(['node', 'husgit', 'group', 'remove', group]);
+      await cmd.parseAsync(['node', 'remove', group]);
       break;
     }
 
@@ -171,7 +171,7 @@ async function runReleaseInteractive(): Promise<void> {
 
   const { releaseCommand } = await import('./release.js');
   const cmd = releaseCommand();
-  await cmd.parseAsync(['node', 'husgit', 'release', sourceEnv]);
+  await cmd.parseAsync(['node', 'release', sourceEnv]);
 }
 
 async function runBackportInteractive(): Promise<void> {
@@ -194,5 +194,5 @@ async function runBackportInteractive(): Promise<void> {
 
   const { backportCommand } = await import('./backport.js');
   const cmd = backportCommand();
-  await cmd.parseAsync(['node', 'husgit', 'backport', sourceEnv]);
+  await cmd.parseAsync(['node', 'backport', sourceEnv]);
 }
