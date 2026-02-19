@@ -99,6 +99,48 @@ husgit
 
 Configuration is stored at `~/.husgit/config.json`. You can edit it directly or use the CLI commands to manage it.
 
+## Publishing
+
+### Version Management
+
+Versions are managed manually using npm's versioning system. Before each release, decide whether the change is a:
+
+- **Patch** (`0.0.X`) — Bug fixes and small improvements
+- **Minor** (`0.X.0`) — New features, backwards compatible
+- **Major** (`X.0.0`) — Breaking changes
+
+### Release Process
+
+Use the automated release script to bump version, run checks, and publish:
+
+```bash
+# Preview what will be published (dry run)
+pnpm release:dry patch
+
+# Actually publish (bumps version, creates git tag, publishes to npm)
+pnpm release patch
+pnpm release minor
+pnpm release major
+```
+
+The release script automatically:
+1. Type checks your code (`tsc --noEmit`)
+2. Verifies formatting with Prettier
+3. Builds the package (`tsup`)
+4. Bumps the version using `npm version` (creates git tag)
+5. Publishes to npm registry
+
+If any check fails, the release stops immediately and nothing is published.
+
+### Manual Release (if needed)
+
+For advanced scenarios, you can manage versioning manually:
+
+```bash
+npm version patch    # or minor, major
+npm publish
+```
+
 ## License
 
 MIT
