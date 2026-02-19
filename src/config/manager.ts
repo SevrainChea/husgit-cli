@@ -153,7 +153,9 @@ export function validateConfig(config: unknown): HusgitConfig {
 
     // Check required fields
     if (typeof envObj.name !== 'string' || !envObj.name.trim()) {
-      throw new Error(`Environment at index ${i} missing required field "name" (string)`);
+      throw new Error(
+        `Environment at index ${i} missing required field "name" (string)`,
+      );
     }
 
     if (typeof envObj.order !== 'number') {
@@ -185,14 +187,22 @@ export function validateConfig(config: unknown): HusgitConfig {
   }
 
   // Validate groups (required, must be object)
-  if (!cfg.groups || typeof cfg.groups !== 'object' || Array.isArray(cfg.groups)) {
+  if (
+    !cfg.groups ||
+    typeof cfg.groups !== 'object' ||
+    Array.isArray(cfg.groups)
+  ) {
     throw new Error('Config field "groups" must be an object');
   }
 
   const groupsObj = cfg.groups as Record<string, unknown>;
 
   for (const [groupName, groupValue] of Object.entries(groupsObj)) {
-    if (!groupValue || typeof groupValue !== 'object' || Array.isArray(groupValue)) {
+    if (
+      !groupValue ||
+      typeof groupValue !== 'object' ||
+      Array.isArray(groupValue)
+    ) {
       throw new Error(`Group "${groupName}" must be an object`);
     }
 
@@ -206,7 +216,9 @@ export function validateConfig(config: unknown): HusgitConfig {
     for (let i = 0; i < group.projects.length; i++) {
       const proj = group.projects[i];
       if (!proj || typeof proj !== 'object' || Array.isArray(proj)) {
-        throw new Error(`Project at index ${i} in group "${groupName}" must be an object`);
+        throw new Error(
+          `Project at index ${i} in group "${groupName}" must be an object`,
+        );
       }
 
       const projObj = proj as Record<string, unknown>;
@@ -222,7 +234,10 @@ export function validateConfig(config: unknown): HusgitConfig {
       }
 
       // Type checks
-      if (typeof projObj.externalId !== 'string' || !projObj.externalId.trim()) {
+      if (
+        typeof projObj.externalId !== 'string' ||
+        !projObj.externalId.trim()
+      ) {
         throw new Error(
           `Project at index ${i} in group "${groupName}" field "externalId" must be a non-empty string`,
         );
@@ -240,7 +255,11 @@ export function validateConfig(config: unknown): HusgitConfig {
         );
       }
 
-      if (!projObj.branchMap || typeof projObj.branchMap !== 'object' || Array.isArray(projObj.branchMap)) {
+      if (
+        !projObj.branchMap ||
+        typeof projObj.branchMap !== 'object' ||
+        Array.isArray(projObj.branchMap)
+      ) {
         throw new Error(
           `Project at index ${i} in group "${groupName}" field "branchMap" must be an object`,
         );

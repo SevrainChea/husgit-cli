@@ -3,7 +3,12 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import chalk from 'chalk';
-import { loadConfig, saveConfig, validateConfig, getConfigPath } from '../../config/manager.js';
+import {
+  loadConfig,
+  saveConfig,
+  validateConfig,
+  getConfigPath,
+} from '../../config/manager.js';
 
 export function configSetCommand(): Command {
   return new Command('set')
@@ -46,12 +51,19 @@ function runConfigSet(filePath: string): void {
     const currentConfig = loadConfig();
     const configPath = getConfigPath();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = configPath.replace(/\.json$/, `.backup.${timestamp}.json`);
+    const backupPath = configPath.replace(
+      /\.json$/,
+      `.backup.${timestamp}.json`,
+    );
 
     try {
       const configDir = dirname(configPath);
       mkdirSync(configDir, { recursive: true });
-      writeFileSync(backupPath, JSON.stringify(currentConfig, null, 2) + '\n', 'utf-8');
+      writeFileSync(
+        backupPath,
+        JSON.stringify(currentConfig, null, 2) + '\n',
+        'utf-8',
+      );
     } catch (error) {
       throw new Error(`Failed to create backup: ${(error as Error).message}`);
     }
