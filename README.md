@@ -120,6 +120,54 @@ husgit
 
 Configuration is stored at `~/.husgit/config.json`. You can edit it directly or use the CLI commands to manage it.
 
+## Development
+
+**Prerequisites:** Node.js >= 18, [pnpm](https://pnpm.io/)
+
+```bash
+git clone https://github.com/SevrainChea/husgit-cli.git
+cd husgit-cli
+pnpm install
+```
+
+**Build once:**
+
+```bash
+pnpm build        # outputs to dist/index.js
+pnpm typecheck    # TypeScript type checking
+pnpm format       # Prettier formatting
+```
+
+**Watch mode (rebuilds on save):**
+
+```bash
+pnpm dev
+```
+
+`pnpm dev` runs tsup in watch mode — it recompiles `src/` into `dist/index.js` on every file save. There's no live-reload; to test a change, run the CLI manually in a second terminal after saving:
+
+```bash
+# Terminal 1
+pnpm dev
+
+# Terminal 2 — re-run after each save
+./dist/index.js <command>
+```
+
+**Link globally for local testing:**
+
+```bash
+pnpm link --global   # makes `husgit` available system-wide
+# ... make changes, then rebuild with pnpm build or pnpm dev
+pnpm unlink --global # remove when done
+```
+
+The global `husgit` binary points to `dist/index.js`, so changes require a rebuild to take effect.
+
+**Local config for testing:**
+
+Edit `~/.husgit/config.json` directly to set up test environments and groups without affecting real GitLab projects. The file is created automatically on first run.
+
 ## Publishing
 
 ### Version Management
