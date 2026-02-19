@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const versionBump = args[0];
+const versionBump = args.find(arg => arg !== '--dry-run');
 
 const validBumps = ['patch', 'minor', 'major'];
 
