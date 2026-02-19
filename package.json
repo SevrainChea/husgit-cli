@@ -24,6 +24,10 @@
     "merge-request",
     "cli"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SevrainChea/husgit-cli.git"
+  },
   "license": "MIT",
   "dependencies": {
     "@inquirer/prompts": "^7.3.2",
