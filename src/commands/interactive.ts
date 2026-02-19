@@ -1,5 +1,9 @@
 import chalk from 'chalk';
-import { loadConfig, hasEnvironments, getGroupNames } from '../config/manager.js';
+import {
+  loadConfig,
+  hasEnvironments,
+  getGroupNames,
+} from '../config/manager.js';
 import { runSetupFlow } from './setup/flow.js';
 import { promptSelect } from '../ui/prompts.js';
 
@@ -112,13 +116,7 @@ async function groupsMenu(): Promise<void> {
       );
       const { groupAddProjectCommand } = await import('./group/addProject.js');
       const cmd = groupAddProjectCommand();
-      await cmd.parseAsync([
-        'node',
-        'husgit',
-        'group',
-        'add-project',
-        group,
-      ]);
+      await cmd.parseAsync(['node', 'husgit', 'group', 'add-project', group]);
       break;
     }
 
@@ -142,13 +140,7 @@ async function groupsMenu(): Promise<void> {
       );
       const { groupRemoveCommand } = await import('./group/remove.js');
       const cmd = groupRemoveCommand();
-      await cmd.parseAsync([
-        'node',
-        'husgit',
-        'group',
-        'remove',
-        group,
-      ]);
+      await cmd.parseAsync(['node', 'husgit', 'group', 'remove', group]);
       break;
     }
 

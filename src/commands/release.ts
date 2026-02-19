@@ -8,7 +8,10 @@ import {
   getNextEnvironment,
 } from '../config/manager.js';
 import { createGitlabClient } from '../gitlab/client.js';
-import { resolveBranchPairs, executeMergeRequests } from '../services/flowExecution.js';
+import {
+  resolveBranchPairs,
+  executeMergeRequests,
+} from '../services/flowExecution.js';
 import { promptSelect, promptInput } from '../ui/prompts.js';
 import type { MergeRequestResult } from '../types.js';
 
@@ -39,16 +42,16 @@ async function runRelease(
   const targetEnv = getNextEnvironment(config, sourceEnv);
   if (!targetEnv) {
     console.log(
-      chalk.red(
-        `No next environment after "${sourceEnv}". Cannot release.`,
-      ),
+      chalk.red(`No next environment after "${sourceEnv}". Cannot release.`),
     );
     return;
   }
 
   const allGroups = getGroupNames(config);
   if (allGroups.length === 0) {
-    console.log(chalk.red('No groups configured. Run "husgit group add" first.'));
+    console.log(
+      chalk.red('No groups configured. Run "husgit group add" first.'),
+    );
     return;
   }
 
@@ -73,7 +76,12 @@ async function runRelease(
     );
   }
 
-  const pairs = resolveBranchPairs(config, sourceEnv, 'release', selectedGroups);
+  const pairs = resolveBranchPairs(
+    config,
+    sourceEnv,
+    'release',
+    selectedGroups,
+  );
 
   if (pairs.length === 0) {
     console.log(chalk.yellow('No projects to release.'));
@@ -91,7 +99,11 @@ async function runRelease(
     style: { head: ['cyan'] },
   });
   for (const pair of pairs) {
-    previewTable.push([pair.project.name, pair.sourceBranch, pair.targetBranch]);
+    previewTable.push([
+      pair.project.name,
+      pair.sourceBranch,
+      pair.targetBranch,
+    ]);
   }
   console.log(previewTable.toString());
 

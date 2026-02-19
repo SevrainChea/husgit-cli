@@ -1,4 +1,9 @@
-import { Client, createClient, fetchExchange, type OperationResult } from '@urql/core';
+import {
+  Client,
+  createClient,
+  fetchExchange,
+  type OperationResult,
+} from '@urql/core';
 import axios, { type AxiosInstance } from 'axios';
 import type { GitlabProject } from '../types.js';
 import {
@@ -60,7 +65,8 @@ export class GitlabClient {
         .query<GetProjectsData>(getProjects, { membership: true, after })
         .toPromise();
 
-      if (result.error) throw new Error(`Failed to fetch projects: ${result.error.message}`);
+      if (result.error)
+        throw new Error(`Failed to fetch projects: ${result.error.message}`);
 
       const data: GetProjectsData | undefined = result.data;
       const nodes = data?.projects?.nodes || [];
@@ -80,9 +86,7 @@ export class GitlabClient {
     return allProjects;
   }
 
-  async getProjectById(
-    projectId: string,
-  ): Promise<GitlabProject> {
+  async getProjectById(projectId: string): Promise<GitlabProject> {
     const { data } = await this.axiosClient.get(`/projects/${projectId}`);
     return {
       externalId: String(data.id),
@@ -173,7 +177,9 @@ export class GitlabClient {
 
     return {
       mrId: externalMrId,
-      mrUrl: webUrl || `${this.gitlabUrl}/${projectFullPath}/-/merge_requests/${iid}`,
+      mrUrl:
+        webUrl ||
+        `${this.gitlabUrl}/${projectFullPath}/-/merge_requests/${iid}`,
     };
   }
 
@@ -181,9 +187,7 @@ export class GitlabClient {
     projectFullPath: string,
     sourceBranch: string,
     targetBranch: string,
-  ): Promise<
-    { id: string; iid: string; webUrl: string; state: string }[]
-  > {
+  ): Promise<{ id: string; iid: string; webUrl: string; state: string }[]> {
     const { data } = await this.gqlClient
       .query(getProjectOpenedMergeRequestBySourceAndTarget, {
         fullPath: projectFullPath,
@@ -195,7 +199,11 @@ export class GitlabClient {
     const edges = data?.project?.mergeRequests?.edges || [];
     return edges
       .filter((e: { node: unknown }) => e.node)
-      .map((e: { node: { id: string; iid: string; webUrl: string; state: string } }) => e.node);
+      .map(
+        (e: {
+          node: { id: string; iid: string; webUrl: string; state: string };
+        }) => e.node,
+      );
   }
 }
 

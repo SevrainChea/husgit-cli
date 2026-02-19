@@ -75,8 +75,16 @@ async function runStatus(options: {
     return;
   }
 
-  if (options.type && options.type !== 'release' && options.type !== 'backport') {
-    console.log(chalk.red(`Invalid --type "${options.type}". Must be "release" or "backport".`));
+  if (
+    options.type &&
+    options.type !== 'release' &&
+    options.type !== 'backport'
+  ) {
+    console.log(
+      chalk.red(
+        `Invalid --type "${options.type}". Must be "release" or "backport".`,
+      ),
+    );
     return;
   }
 
@@ -146,7 +154,9 @@ async function runStatus(options: {
             });
           }
         } catch (err) {
-          spinner.warn(`Could not query "${project.name}": ${err instanceof Error ? err.message : String(err)}`);
+          spinner.warn(
+            `Could not query "${project.name}": ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
     }

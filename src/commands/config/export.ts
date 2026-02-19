@@ -19,7 +19,11 @@ async function runConfigExport(): Promise<void> {
     copyToClipboard(json);
     console.log(chalk.green('\nConfig copied to clipboard.'));
   } catch {
-    console.log(chalk.yellow('\nCould not copy to clipboard — paste the output above manually.'));
+    console.log(
+      chalk.yellow(
+        '\nCould not copy to clipboard — paste the output above manually.',
+      ),
+    );
   }
 }
 

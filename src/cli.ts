@@ -22,9 +22,7 @@ export function createProgram(): Command {
   setup.addCommand(setupFlowCommand());
 
   // Group
-  const group = program
-    .command('group')
-    .description('Manage project groups');
+  const group = program.command('group').description('Manage project groups');
   group.addCommand(groupAddCommand());
   group.addCommand(groupAddProjectCommand());
   group.addCommand(groupListCommand());

@@ -8,7 +8,10 @@ import {
   getPreviousEnvironment,
 } from '../config/manager.js';
 import { createGitlabClient } from '../gitlab/client.js';
-import { resolveBranchPairs, executeMergeRequests } from '../services/flowExecution.js';
+import {
+  resolveBranchPairs,
+  executeMergeRequests,
+} from '../services/flowExecution.js';
 import { promptSelect, promptInput } from '../ui/prompts.js';
 import type { MergeRequestResult } from '../types.js';
 
@@ -100,7 +103,11 @@ async function runBackport(
     style: { head: ['cyan'] },
   });
   for (const pair of pairs) {
-    previewTable.push([pair.project.name, pair.sourceBranch, pair.targetBranch]);
+    previewTable.push([
+      pair.project.name,
+      pair.sourceBranch,
+      pair.targetBranch,
+    ]);
   }
   console.log(previewTable.toString());
 

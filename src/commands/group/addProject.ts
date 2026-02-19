@@ -89,10 +89,7 @@ async function runGroupAddProject(
   } else {
     branchMap = {};
     for (const env of config.environments) {
-      const branches = await client.getProjectBranches(
-        project.fullPath,
-        '',
-      );
+      const branches = await client.getProjectBranches(project.fullPath, '');
 
       const branch = await promptSearch<string>(
         `Branch for "${env.name}" environment:`,

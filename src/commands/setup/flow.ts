@@ -1,6 +1,10 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { loadConfig, saveConfig, setEnvironments } from '../../config/manager.js';
+import {
+  loadConfig,
+  saveConfig,
+  setEnvironments,
+} from '../../config/manager.js';
 import { promptInput, promptConfirm } from '../../ui/prompts.js';
 import type { Environment } from '../../types.js';
 
@@ -28,10 +32,7 @@ export async function runSetupFlow(): Promise<void> {
     }
   }
 
-  const countStr = await promptInput(
-    'How many environments?',
-    '3',
-  );
+  const countStr = await promptInput('How many environments?', '3');
   const count = parseInt(countStr, 10);
   if (isNaN(count) || count < 2) {
     console.log(chalk.red('Need at least 2 environments.'));
@@ -42,10 +43,7 @@ export async function runSetupFlow(): Promise<void> {
   const environments: Environment[] = [];
 
   for (let i = 0; i < count; i++) {
-    const name = await promptInput(
-      `Environment ${i + 1} name:`,
-      defaults[i],
-    );
+    const name = await promptInput(`Environment ${i + 1} name:`, defaults[i]);
     environments.push({ name: name.trim(), order: i });
   }
 
