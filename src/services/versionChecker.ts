@@ -1,7 +1,7 @@
-import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
+import { execSync } from 'node:child_process';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 
 interface CacheData {
   latestVersion: string;
@@ -20,10 +20,12 @@ const CACHE_FILE = join(CACHE_DIR, 'version-cache.json');
 const CACHE_TTL = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
 function readPackageVersion(): string {
-  const packageJson = JSON.parse(
-    readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8')
-  );
-  return packageJson.version;
+  try {
+    const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+    return packageJson.version;
+  } catch {
+    return '0.0.0'; // fallback
+  }
 }
 
 function readCache(): CacheData | null {
@@ -48,6 +50,19 @@ function isCacheValid(cache: CacheData): boolean {
   return Date.now() - cache.checkedAt < CACHE_TTL;
 }
 
+function isVersionGreater(latest: string, current: string): boolean {
+  const parseVersion = (v: string) => {
+    const parts = v.split('.').map((p) => parseInt(p, 10));
+    return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
+  };
+  const [latestMajor, latestMinor, latestPatch] = parseVersion(latest);
+  const [currMajor, currMinor, currPatch] = parseVersion(current);
+
+  if (latestMajor !== currMajor) return latestMajor > currMajor;
+  if (latestMinor !== currMinor) return latestMinor > currMinor;
+  return latestPatch > currPatch;
+}
+
 function fetchLatestVersion(): string | null {
   try {
     const version = execSync('npm view husgit-cli version', {
@@ -61,7 +76,7 @@ function fetchLatestVersion(): string | null {
   }
 }
 
-export async function checkVersion(): Promise<VersionCheckResult> {
+export function checkVersion(): VersionCheckResult {
   const currentVersion = readPackageVersion();
 
   // Try to use cache first
@@ -70,7 +85,7 @@ export async function checkVersion(): Promise<VersionCheckResult> {
     return {
       currentVersion,
       latestVersion: cache.latestVersion,
-      updateAvailable: cache.latestVersion > currentVersion,
+      updateAvailable: isVersionGreater(cache.latestVersion, currentVersion),
       cached: true,
     };
   }
@@ -87,7 +102,7 @@ export async function checkVersion(): Promise<VersionCheckResult> {
     return {
       currentVersion,
       latestVersion,
-      updateAvailable: latestVersion > currentVersion,
+      updateAvailable: isVersionGreater(latestVersion, currentVersion),
       cached: false,
     };
   }
@@ -97,7 +112,7 @@ export async function checkVersion(): Promise<VersionCheckResult> {
     return {
       currentVersion,
       latestVersion: cache.latestVersion,
-      updateAvailable: cache.latestVersion > currentVersion,
+      updateAvailable: isVersionGreater(cache.latestVersion, currentVersion),
       cached: true,
     };
   }
