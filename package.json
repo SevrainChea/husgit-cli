@@ -17,7 +17,9 @@
     "dev": "tsup --watch",
     "format": "prettier --write 'src/**/*.ts'",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build && pnpm typecheck"
+    "prepublishOnly": "pnpm build && pnpm typecheck",
+    "release": "node scripts/release.js",
+    "release:dry": "node scripts/release.js --dry-run"
   },
   "keywords": [
     "gitlab",
