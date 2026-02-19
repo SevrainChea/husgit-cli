@@ -1,6 +1,6 @@
 {
   "name": "husgit-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "CLI tool for orchestrating GitLab merge request workflows",
   "type": "module",
   "bin": {
