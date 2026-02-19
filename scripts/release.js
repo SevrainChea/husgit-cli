@@ -45,7 +45,7 @@ if (dryRun) {
   process.exit(0);
 }
 
-// Perform version bump and publish
+// Perform version bump
 console.log(`\n📦 Bumping version...`);
 try {
   execSync(`npm version ${versionBump}`, { stdio: 'inherit' });
@@ -54,12 +54,13 @@ try {
   process.exit(1);
 }
 
-console.log(`\n📤 Publishing to npm...`);
+// Push to GitHub (workflow handles npm publish and GitHub release)
+console.log(`\n📤 Pushing to GitHub...`);
 try {
-  execSync('npm publish', { stdio: 'inherit' });
-  console.log('\n✅ Release complete! Package published to npm.');
+  execSync('git push && git push --tags', { stdio: 'inherit' });
+  console.log('\n✅ Tag pushed! GitHub Actions will now publish to npm and create a release.');
 } catch (error) {
-  console.error('\n❌ Publish failed.');
-  console.error('Your local changes and git tag may still exist.');
+  console.error('\n❌ Git push failed.');
+  console.error('Your local version bump and tag still exist. Push manually with: git push && git push --tags');
   process.exit(1);
 }
