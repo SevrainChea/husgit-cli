@@ -1,10 +1,9 @@
 import { Command } from 'commander';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import chalk from 'chalk';
 import { loadConfig, saveConfig, validateConfig, getConfigPath } from '../../config/manager.js';
-import { writeFileSync, mkdirSync } from 'node:fs';
 
 export function configSetCommand(): Command {
   return new Command('set')
@@ -13,7 +12,7 @@ export function configSetCommand(): Command {
     .action(runConfigSet);
 }
 
-async function runConfigSet(filePath: string): Promise<void> {
+function runConfigSet(filePath: string): void {
   try {
     // Resolve path with ~ expansion and relative path support
     const resolvedPath = resolvePath(filePath);
@@ -46,11 +45,12 @@ async function runConfigSet(filePath: string): Promise<void> {
     // Create backup of current config with timestamp
     const currentConfig = loadConfig();
     const configPath = getConfigPath();
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = configPath.replace(/\.json$/, `.backup.${timestamp}.json`);
 
     try {
-      mkdirSync(configPath.split('/').slice(0, -1).join('/'), { recursive: true });
+      const configDir = dirname(configPath);
+      mkdirSync(configDir, { recursive: true });
       writeFileSync(backupPath, JSON.stringify(currentConfig, null, 2) + '\n', 'utf-8');
     } catch (error) {
       throw new Error(`Failed to create backup: ${(error as Error).message}`);
@@ -62,8 +62,7 @@ async function runConfigSet(filePath: string): Promise<void> {
     console.log(chalk.green('✓ Config loaded successfully'));
     console.log(chalk.gray(`  Backup saved: ${backupPath}`));
   } catch (error) {
-    console.error(chalk.red(`✗ Error: ${(error as Error).message}`));
-    process.exit(1);
+    console.log(chalk.red(`✗ Error: ${(error as Error).message}`));
   }
 }
 
