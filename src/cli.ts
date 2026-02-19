@@ -1,4 +1,7 @@
 import { Command } from 'commander';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { setupFlowCommand } from './commands/setup/flow.js';
 import { groupAddCommand } from './commands/group/add.js';
 import { groupAddProjectCommand } from './commands/group/addProject.js';
@@ -9,13 +12,18 @@ import { backportCommand } from './commands/backport.js';
 import { statusCommand } from './commands/status.js';
 import { configCommand } from './commands/config/index.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '../package.json'), 'utf-8')
+);
+
 export function createProgram(): Command {
   const program = new Command();
 
   program
     .name('husgit')
     .description('CLI tool for orchestrating GitLab merge request workflows')
-    .version('0.1.0');
+    .version(packageJson.version);
 
   // Setup
   const setup = program.command('setup').description('Configure environments');
