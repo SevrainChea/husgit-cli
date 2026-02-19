@@ -63,6 +63,47 @@ husgit <command>
 
 Update checks are cached for 8 hours to minimize startup overhead. The cache is stored in `~/.husgit/version-cache.json`.
 
+## Concepts
+
+### Environment Flow
+
+Environments form a linear chain. `release` promotes forward, `backport` demotes backward:
+
+```mermaid
+graph LR
+  develop -->|release| staging -->|release| production
+  production -->|backport| staging -->|backport| develop
+```
+
+### branchMap: Project → Branch per Environment
+
+Each project maps every environment to its corresponding branch:
+
+```mermaid
+graph TD
+  P[my-service] --> D["develop → 'develop'"]
+  P --> S["staging → 'release/staging'"]
+  P --> PROD["production → 'main'"]
+```
+
+### Groups as Optional Labels
+
+Projects live in a flat registry. Groups are optional labels you can assign projects to — and a project can belong to multiple groups:
+
+```mermaid
+graph TD
+  backend[Group: backend]
+  frontend[Group: frontend]
+  api[api-service]
+  auth[auth-service]
+  web[web-app]
+  api --> backend
+  auth --> backend
+  web --> frontend
+  api --> frontend
+  standalone["standalone-service\n- no group -"]
+```
+
 ## Usage
 
 **Promote all projects in a group to the next environment:**

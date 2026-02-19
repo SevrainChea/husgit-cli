@@ -23,7 +23,7 @@ async function runGroupRemove(
   }
 
   if (!options.force) {
-    const projectCount = config.groups[name].projects.length;
+    const projectCount = config.groups[name].projectPaths.length;
     const ok = await promptConfirm(
       `Remove group "${name}" (${projectCount} project${projectCount !== 1 ? 's' : ''})? This cannot be undone.`,
       false,

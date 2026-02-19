@@ -4,29 +4,31 @@ import ora from 'ora';
 import {
   loadConfig,
   saveConfig,
+  addProject,
   addProjectToGroup,
   hasEnvironments,
+  getGroupNames,
 } from '../../config/manager.js';
 import { createGitlabClient } from '../../gitlab/client.js';
-import { promptInput, promptConfirm, promptSearch } from '../../ui/prompts.js';
+import { promptInput, promptConfirm, promptSearch, promptSelect } from '../../ui/prompts.js';
 import type { ProjectConfig, GitlabProject } from '../../types.js';
 
 export function groupAddProjectCommand(): Command {
   return new Command('add-project')
-    .description('Add a project to a group')
-    .argument('<group>', 'Group name')
+    .description('Add a project to the registry (optionally assign to a group)')
+    .argument('[group]', 'Group name (optional)')
     .option('--project-id <id>', 'GitLab project ID')
     .option('--branch-map <json>', 'Branch map as JSON')
     .action(runGroupAddProject);
 }
 
 async function runGroupAddProject(
-  groupName: string,
+  groupName: string | undefined,
   options: { projectId?: string; branchMap?: string },
 ): Promise<void> {
   const config = loadConfig();
 
-  if (!config.groups[groupName]) {
+  if (groupName && !config.groups[groupName]) {
     console.log(chalk.red(`Group "${groupName}" does not exist.`));
     return;
   }
@@ -123,6 +125,20 @@ async function runGroupAddProject(
     console.log(`  ${env} → ${branch}`);
   }
 
+  // If group wasn't provided as argument, offer optional group assignment
+  if (!groupName) {
+    const groups = getGroupNames(config);
+    if (groups.length > 0) {
+      const assignGroup = await promptConfirm('Assign to a group? (optional)', false);
+      if (assignGroup) {
+        groupName = await promptSelect<string>(
+          'Select group:',
+          groups.map((g) => ({ name: g, value: g })),
+        );
+      }
+    }
+  }
+
   const ok = await promptConfirm('Add this project?');
   if (!ok) {
     console.log('Cancelled.');
@@ -130,9 +146,13 @@ async function runGroupAddProject(
   }
 
   try {
-    addProjectToGroup(config, groupName, projectConfig);
+    addProject(config, projectConfig);
+    if (groupName) {
+      addProjectToGroup(config, groupName, projectConfig.fullPath);
+    }
     saveConfig(config);
-    console.log(chalk.green(`Project added to group "${groupName}".`));
+    const groupMsg = groupName ? ` and assigned to group "${groupName}"` : '';
+    console.log(chalk.green(`Project added to registry${groupMsg}.`));
   } catch (error: unknown) {
     console.log(
       chalk.red(

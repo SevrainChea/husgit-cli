@@ -4,12 +4,12 @@ import ora from 'ora';
 import Table from 'cli-table3';
 import {
   loadConfig,
-  getGroupNames,
+  getAllProjects,
   hasEnvironments,
   getEnvironmentByName,
 } from '../config/manager.js';
 import { createGitlabClient } from '../gitlab/client.js';
-import type { OpenMergeRequest, Environment, Direction } from '../types.js';
+import type { OpenMergeRequest, Environment, Direction, ProjectConfig } from '../types.js';
 
 interface EnvPair {
   sourceEnv: Environment;
@@ -95,11 +95,34 @@ async function runStatus(options: {
     return;
   }
 
-  const groupNames = options.group ? [options.group] : getGroupNames(config);
+  // Collect unique projects to query
+  let projectsToQuery: ProjectConfig[];
+  if (options.group) {
+    const group = config.groups[options.group];
+    if (!group) {
+      console.log(chalk.yellow(`Group "${options.group}" not found.`));
+      return;
+    }
+    projectsToQuery = group.projectPaths
+      .map((fp) => config.projects[fp])
+      .filter((p): p is ProjectConfig => p !== undefined);
+  } else {
+    projectsToQuery = getAllProjects(config);
+  }
 
-  if (groupNames.length === 0) {
-    console.log(chalk.yellow('No groups configured.'));
+  if (projectsToQuery.length === 0) {
+    console.log(chalk.yellow('No projects configured.'));
     return;
+  }
+
+  // Build reverse lookup: fullPath -> group names
+  const projectGroupsMap = new Map<string, string[]>();
+  for (const [groupName, group] of Object.entries(config.groups)) {
+    for (const fp of group.projectPaths) {
+      const existing = projectGroupsMap.get(fp) ?? [];
+      existing.push(groupName);
+      projectGroupsMap.set(fp, existing);
+    }
   }
 
   const envPairs = buildEnvPairs(
@@ -118,46 +141,38 @@ async function runStatus(options: {
 
   const openMRs: OpenMergeRequest[] = [];
 
-  for (const groupName of groupNames) {
-    const group = config.groups[groupName];
-    if (!group) {
-      spinner.warn(`Group "${groupName}" not found`);
-      continue;
-    }
+  for (const project of projectsToQuery) {
+    for (const pair of envPairs) {
+      const sourceBranch = project.branchMap[pair.sourceEnv.name];
+      const targetBranch = project.branchMap[pair.targetEnv.name];
 
-    for (const project of group.projects) {
-      for (const pair of envPairs) {
-        const sourceBranch = project.branchMap[pair.sourceEnv.name];
-        const targetBranch = project.branchMap[pair.targetEnv.name];
+      if (!sourceBranch || !targetBranch) continue;
 
-        if (!sourceBranch || !targetBranch) continue;
+      try {
+        const mrs = await client.getOpenMergeRequests(
+          project.fullPath,
+          sourceBranch,
+          targetBranch,
+        );
 
-        try {
-          const mrs = await client.getOpenMergeRequests(
-            project.fullPath,
+        for (const mr of mrs) {
+          openMRs.push({
+            project,
+            groups: projectGroupsMap.get(project.fullPath) ?? [],
+            sourceEnv: pair.sourceEnv.name,
+            targetEnv: pair.targetEnv.name,
             sourceBranch,
             targetBranch,
-          );
-
-          for (const mr of mrs) {
-            openMRs.push({
-              project,
-              group: groupName,
-              sourceEnv: pair.sourceEnv.name,
-              targetEnv: pair.targetEnv.name,
-              sourceBranch,
-              targetBranch,
-              direction: pair.direction,
-              mrId: mr.iid,
-              mrUrl: mr.webUrl,
-              state: mr.state,
-            });
-          }
-        } catch (err) {
-          spinner.warn(
-            `Could not query "${project.name}": ${err instanceof Error ? err.message : String(err)}`,
-          );
+            direction: pair.direction,
+            mrId: mr.iid,
+            mrUrl: mr.webUrl,
+            state: mr.state,
+          });
         }
+      } catch (err) {
+        spinner.warn(
+          `Could not query "${project.name}": ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
   }
@@ -170,19 +185,19 @@ async function runStatus(options: {
   }
 
   const table = new Table({
-    head: ['Group', 'Project', 'Direction', 'Environments', 'State', 'URL'],
+    head: ['Groups', 'Project', 'Direction', 'Environments', 'State', 'URL'],
     style: { head: ['cyan'] },
   });
 
   for (const mr of openMRs) {
     table.push([
-      mr.group,
+      mr.groups.join(', ') || chalk.dim('ungrouped'),
       mr.project.name,
       mr.direction,
       `${mr.sourceEnv} → ${mr.targetEnv}`,
       mr.state || '-',
       mr.mrUrl || '-',
-    ]); // columns: Group, Project, Direction, Environments, State, URL
+    ]);
   }
 
   console.log(`\n${chalk.cyan(`${openMRs.length} open MR(s):`)}`);

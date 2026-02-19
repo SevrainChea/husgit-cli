@@ -11,13 +11,14 @@ export interface ProjectConfig {
 }
 
 export interface Group {
-  projects: ProjectConfig[];
+  projectPaths: string[];
 }
 
 export interface HusgitConfig {
   gitlabUrl: string;
   environments: Environment[];
   groups: Record<string, Group>;
+  projects: Record<string, ProjectConfig>;
 }
 
 export interface GitlabProject {
@@ -45,7 +46,7 @@ export type Direction = 'release' | 'backport';
 
 export interface OpenMergeRequest {
   project: ProjectConfig;
-  group: string;
+  groups: string[];
   sourceEnv: string;
   targetEnv: string;
   sourceBranch: string;

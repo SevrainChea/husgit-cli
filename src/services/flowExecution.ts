@@ -15,7 +15,7 @@ export function resolveBranchPairs(
   config: HusgitConfig,
   sourceEnvName: string,
   direction: 'release' | 'backport',
-  groupNames: string[],
+  projects: ProjectConfig[],
 ): BranchPair[] {
   const sourceEnv = getEnvironmentByName(config, sourceEnvName);
   if (!sourceEnv) {
@@ -36,24 +36,17 @@ export function resolveBranchPairs(
 
   const pairs: BranchPair[] = [];
 
-  for (const groupName of groupNames) {
-    const group = config.groups[groupName];
-    if (!group) {
-      throw new Error(`Group "${groupName}" not found`);
+  for (const project of projects) {
+    const sourceBranch = project.branchMap[sourceEnvName];
+    const targetBranch = project.branchMap[targetEnv.name];
+
+    if (!sourceBranch || !targetBranch) {
+      throw new Error(
+        `Project "${project.name}" is missing branch mapping for "${sourceEnvName}" or "${targetEnv.name}"`,
+      );
     }
 
-    for (const project of group.projects) {
-      const sourceBranch = project.branchMap[sourceEnvName];
-      const targetBranch = project.branchMap[targetEnv.name];
-
-      if (!sourceBranch || !targetBranch) {
-        throw new Error(
-          `Project "${project.name}" is missing branch mapping for "${sourceEnvName}" or "${targetEnv.name}"`,
-        );
-      }
-
-      pairs.push({ project, sourceBranch, targetBranch });
-    }
+    pairs.push({ project, sourceBranch, targetBranch });
   }
 
   return pairs;
