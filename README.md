@@ -42,6 +42,27 @@ husgit group add-project my-services
 
 `add-project` will search your GitLab namespace and prompt you to map each environment to the corresponding branch for that project.
 
+## Auto-Update
+
+husgit automatically checks for available updates when you run commands. If a newer version is available, you'll be prompted to install it.
+
+### Skipping Update Checks
+
+To skip the update check for a single run:
+
+```bash
+husgit --skip-update-check <command>
+```
+
+To disable update checks entirely, set the environment variable:
+
+```bash
+export HUSGIT_SKIP_UPDATE_CHECK=1
+husgit <command>
+```
+
+Update checks are cached for 8 hours to minimize startup overhead. The cache is stored in `~/.husgit/version-cache.json`.
+
 ## Usage
 
 **Promote all projects in a group to the next environment:**
