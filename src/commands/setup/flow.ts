@@ -44,17 +44,20 @@ export async function runSetupFlow(): Promise<void> {
 
   for (let i = 0; i < count; i++) {
     const name = await promptInput(`Environment ${i + 1} name:`, defaults[i]);
+    const trimmedName = name.trim();
     const defaultBranchInput = await promptInput(
-      `Default branch for "${name.trim()}" (optional, press enter to skip):`,
-      name.trim(),
+      `Default branch for "${trimmedName}" (optional, press enter to skip):`,
+      trimmedName,
     );
     const defaultBranch = defaultBranchInput.trim() || undefined;
-    environments.push({ name: name.trim(), order: i, defaultBranch });
+    environments.push({ name: trimmedName, order: i, defaultBranch });
   }
 
   console.log(chalk.cyan('\nFlow chain:'));
   for (const env of environments) {
-    const branchNote = env.defaultBranch ? chalk.gray(` (default branch: ${env.defaultBranch})`) : '';
+    const branchNote = env.defaultBranch
+      ? chalk.gray(` (default branch: ${env.defaultBranch})`)
+      : '';
     console.log(`  ${env.order + 1}. ${env.name}${branchNote}`);
   }
   const chain = environments.map((e) => e.name).join(' → ');
