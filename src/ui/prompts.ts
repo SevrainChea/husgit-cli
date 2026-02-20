@@ -1,5 +1,12 @@
-import { input, select, confirm, search, checkbox, Separator } from '@inquirer/prompts';
-import type { HusgitConfig, ProjectConfig } from '../types.js';
+import {
+  input,
+  select,
+  confirm,
+  search,
+  checkbox,
+  Separator,
+} from '@inquirer/prompts';
+import type { HusgitConfig, ProjectConfig, GitlabProject } from '../types.js';
 
 export async function promptInput(
   message: string,
@@ -111,4 +118,21 @@ export async function promptProjectMultiSelect(
   return Array.from(projectPaths)
     .map((fp) => config.projects[fp])
     .filter((p): p is ProjectConfig => p !== undefined);
+}
+
+export async function promptGitlabProjectCheckbox(
+  projects: GitlabProject[],
+): Promise<GitlabProject[]> {
+  if (projects.length === 0) return [];
+
+  const choices = projects.map((p) => ({
+    name: p.name,
+    value: p,
+  }));
+
+  return checkbox<GitlabProject>({
+    message: 'Select projects to add (space to select, enter to confirm):',
+    choices,
+    pageSize: 20,
+  });
 }
