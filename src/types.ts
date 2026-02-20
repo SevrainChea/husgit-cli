@@ -1,6 +1,7 @@
 export interface Environment {
   name: string;
   order: number;
+  defaultBranch?: string;
 }
 
 export interface ProjectConfig {
