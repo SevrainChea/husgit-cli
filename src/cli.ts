@@ -9,6 +9,7 @@ import { groupListCommand } from './commands/group/list.js';
 import { groupRemoveCommand } from './commands/group/remove.js';
 import { projectAddCommand } from './commands/project/add.js';
 import { projectRemoveCommand } from './commands/project/remove.js';
+import { projectListCommand } from './commands/project/list.js';
 import { releaseCommand } from './commands/release.js';
 import { backportCommand } from './commands/backport.js';
 import { statusCommand } from './commands/status.js';
@@ -42,6 +43,7 @@ export function createProgram(): Command {
   const project = program.command('project').description('Manage projects');
   project.addCommand(projectAddCommand());
   project.addCommand(projectRemoveCommand());
+  project.addCommand(projectListCommand());
 
   // Release & Backport
   program.addCommand(releaseCommand());
