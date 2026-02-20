@@ -199,6 +199,13 @@ async function runGroupAddProject(
   }
 
   saveConfig(config);
+  if (saved < toAdd.length) {
+    console.log(
+      chalk.yellow(
+        `${toAdd.length - saved} project(s) failed to add (see errors above).`,
+      ),
+    );
+  }
   console.log(chalk.green(`${saved} project(s) added to registry.`));
 }
 
