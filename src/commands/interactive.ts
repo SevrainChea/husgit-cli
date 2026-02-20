@@ -19,7 +19,7 @@ type MenuAction =
   | 'exit';
 
 type GroupAction = 'add' | 'add-project' | 'list' | 'remove' | 'back';
-type ProjectAction = 'add' | 'remove' | 'back';
+type ProjectAction = 'add' | 'list' | 'remove' | 'back';
 
 function isAbort(err: unknown): boolean {
   return (
@@ -201,6 +201,7 @@ async function projectsMenu(): Promise<void> {
   try {
     action = await promptSelect<ProjectAction>('Project management:', [
       { name: 'Add project', value: 'add' },
+      { name: 'List projects', value: 'list' },
       { name: 'Remove project', value: 'remove' },
       { name: 'Back', value: 'back' },
     ]);
@@ -215,6 +216,13 @@ async function projectsMenu(): Promise<void> {
         const { groupAddProjectCommand } = await import('./group/addProject.js');
         const cmd = groupAddProjectCommand();
         await cmd.parseAsync(['node', 'add-project']);
+        break;
+      }
+
+      case 'list': {
+        const { projectListCommand } = await import('./project/list.js');
+        const cmd = projectListCommand();
+        await cmd.parseAsync(['node', 'list']);
         break;
       }
 
