@@ -49,7 +49,6 @@ async function runGroupAddProject(
 
   const client = createGitlabClient();
 
-  // --- Single-project fast path (--project-id flag) ---
   if (options.projectId) {
     const spinner = ora('Fetching project...').start();
     let project: GitlabProject;
@@ -70,7 +69,6 @@ async function runGroupAddProject(
     return;
   }
 
-  // --- Multi-select path ---
   const spinner = ora('Fetching your GitLab projects...').start();
   let allProjects: GitlabProject[];
   try {
@@ -93,7 +91,6 @@ async function runGroupAddProject(
   const groups: Record<string, string | undefined> = {};
 
   for (const project of selected) {
-    // Skip already registered
     if (config.projects[project.fullPath]) {
       console.log(
         chalk.yellow(`  Skipping "${project.name}" — already in registry.`),
@@ -103,30 +100,7 @@ async function runGroupAddProject(
 
     console.log(chalk.cyan(`\nConfiguring: ${project.name}`));
 
-    // Build branch map with defaultBranch as pre-filter
-    const branchMap: Record<string, string> = {};
-    for (const env of config.environments) {
-      const initialBranches = await client.getProjectBranches(
-        project.fullPath,
-        env.defaultBranch ?? '',
-      );
-
-      const branch = await promptSearch<string>(
-        `Branch for "${env.name}" environment:`,
-        async (term) => {
-          if (term) {
-            const remote = await client.getProjectBranches(
-              project.fullPath,
-              term,
-            );
-            return remote.map((b) => ({ name: b, value: b }));
-          }
-          return initialBranches.map((b) => ({ name: b, value: b }));
-        },
-      );
-
-      branchMap[env.name] = branch;
-    }
+    const branchMap = await buildBranchMap(project, config, client);
 
     const projectConfig: ProjectConfig = {
       externalId: project.externalId,
@@ -135,7 +109,6 @@ async function runGroupAddProject(
       branchMap,
     };
 
-    // Per-project group assignment
     let assignedGroup = groupArg;
     if (!assignedGroup) {
       const groupNames = getGroupNames(config);
@@ -162,7 +135,6 @@ async function runGroupAddProject(
     return;
   }
 
-  // Summary
   console.log(chalk.cyan('\nProjects to add:'));
   for (const p of toAdd) {
     const groupName = groups[p.fullPath];
@@ -179,7 +151,6 @@ async function runGroupAddProject(
     return;
   }
 
-  // Bulk save
   let saved = 0;
   for (const p of toAdd) {
     try {
@@ -198,7 +169,9 @@ async function runGroupAddProject(
     }
   }
 
-  saveConfig(config);
+  if (saved > 0) {
+    saveConfig(config);
+  }
   if (saved < toAdd.length) {
     console.log(
       chalk.yellow(
@@ -233,29 +206,7 @@ async function addSingleProject(
       return;
     }
   } else {
-    branchMap = {};
-    for (const env of config.environments) {
-      const initialBranches = await client.getProjectBranches(
-        project.fullPath,
-        env.defaultBranch ?? '',
-      );
-
-      const branch = await promptSearch<string>(
-        `Branch for "${env.name}" environment:`,
-        async (term) => {
-          if (term) {
-            const remote = await client.getProjectBranches(
-              project.fullPath,
-              term,
-            );
-            return remote.map((b) => ({ name: b, value: b }));
-          }
-          return initialBranches.map((b) => ({ name: b, value: b }));
-        },
-      );
-
-      branchMap[env.name] = branch;
-    }
+    branchMap = await buildBranchMap(project, config, client);
   }
 
   const projectConfig: ProjectConfig = {
@@ -310,4 +261,35 @@ async function addSingleProject(
       ),
     );
   }
+}
+
+async function buildBranchMap(
+  project: GitlabProject,
+  config: ReturnType<typeof loadConfig>,
+  client: ReturnType<typeof createGitlabClient>,
+): Promise<Record<string, string>> {
+  const branchMap: Record<string, string> = {};
+  for (const env of config.environments) {
+    const initialBranches = await client.getProjectBranches(
+      project.fullPath,
+      env.defaultBranch ?? '',
+    );
+
+    const branch = await promptSearch<string>(
+      `Branch for "${env.name}" environment:`,
+      async (term) => {
+        if (term) {
+          const remote = await client.getProjectBranches(
+            project.fullPath,
+            term,
+          );
+          return remote.map((b) => ({ name: b, value: b }));
+        }
+        return initialBranches.map((b) => ({ name: b, value: b }));
+      },
+    );
+
+    branchMap[env.name] = branch;
+  }
+  return branchMap;
 }
