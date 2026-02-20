@@ -21,10 +21,7 @@ function defaultConfig(): HusgitConfig {
 }
 
 function migrateOldFormat(raw: Record<string, unknown>): HusgitConfig {
-  const oldGroups = raw.groups as Record<
-    string,
-    { projects: ProjectConfig[] }
-  >;
+  const oldGroups = raw.groups as Record<string, { projects: ProjectConfig[] }>;
   const projects: Record<string, ProjectConfig> = {};
   const newGroups: Record<string, { projectPaths: string[] }> = {};
 
@@ -294,17 +291,18 @@ export function validateConfig(config: unknown): HusgitConfig {
 
   // Validate projects registry
   const projectsRaw = cfg.projects ?? {};
-  if (
-    typeof projectsRaw !== 'object' ||
-    Array.isArray(projectsRaw)
-  ) {
+  if (typeof projectsRaw !== 'object' || Array.isArray(projectsRaw)) {
     throw new Error('Config field "projects" must be an object');
   }
 
   const projectsObj = projectsRaw as Record<string, unknown>;
 
   for (const [fullPath, projValue] of Object.entries(projectsObj)) {
-    if (!projValue || typeof projValue !== 'object' || Array.isArray(projValue)) {
+    if (
+      !projValue ||
+      typeof projValue !== 'object' ||
+      Array.isArray(projValue)
+    ) {
       throw new Error(`Project "${fullPath}" must be an object`);
     }
 
@@ -312,20 +310,32 @@ export function validateConfig(config: unknown): HusgitConfig {
     const requiredFields = ['externalId', 'name', 'fullPath', 'branchMap'];
     for (const field of requiredFields) {
       if (!(field in projObj)) {
-        throw new Error(`Project "${fullPath}" missing required field "${field}"`);
+        throw new Error(
+          `Project "${fullPath}" missing required field "${field}"`,
+        );
       }
     }
 
     if (typeof projObj.externalId !== 'string' || !projObj.externalId.trim()) {
-      throw new Error(`Project "${fullPath}" field "externalId" must be a non-empty string`);
+      throw new Error(
+        `Project "${fullPath}" field "externalId" must be a non-empty string`,
+      );
     }
 
     if (typeof projObj.name !== 'string' || !projObj.name.trim()) {
-      throw new Error(`Project "${fullPath}" field "name" must be a non-empty string`);
+      throw new Error(
+        `Project "${fullPath}" field "name" must be a non-empty string`,
+      );
     }
 
-    if (!projObj.branchMap || typeof projObj.branchMap !== 'object' || Array.isArray(projObj.branchMap)) {
-      throw new Error(`Project "${fullPath}" field "branchMap" must be an object`);
+    if (
+      !projObj.branchMap ||
+      typeof projObj.branchMap !== 'object' ||
+      Array.isArray(projObj.branchMap)
+    ) {
+      throw new Error(
+        `Project "${fullPath}" field "branchMap" must be an object`,
+      );
     }
   }
 

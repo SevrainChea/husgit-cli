@@ -9,7 +9,12 @@ import {
   getEnvironmentByName,
 } from '../config/manager.js';
 import { createGitlabClient } from '../gitlab/client.js';
-import type { OpenMergeRequest, Environment, Direction, ProjectConfig } from '../types.js';
+import type {
+  OpenMergeRequest,
+  Environment,
+  Direction,
+  ProjectConfig,
+} from '../types.js';
 
 interface EnvPair {
   sourceEnv: Environment;

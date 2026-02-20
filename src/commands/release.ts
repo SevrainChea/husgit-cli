@@ -106,7 +106,12 @@ async function runRelease(
     );
   }
 
-  const pairs = resolveBranchPairs(config, sourceEnv, 'release', selectedProjects);
+  const pairs = resolveBranchPairs(
+    config,
+    sourceEnv,
+    'release',
+    selectedProjects,
+  );
 
   if (pairs.length === 0) {
     console.log(chalk.yellow('No projects to release.'));

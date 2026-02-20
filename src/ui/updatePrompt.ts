@@ -14,12 +14,12 @@ const INSTALL_COMMANDS = {
 
 export async function promptForUpdate(
   currentVersion: string,
-  latestVersion: string
+  latestVersion: string,
 ): Promise<UpdateChoice> {
   console.log(
     chalk.blue(
-      `\n📦 Update available: husgit-cli ${latestVersion} (current: ${currentVersion})\n`
-    )
+      `\n📦 Update available: husgit-cli ${latestVersion} (current: ${currentVersion})\n`,
+    ),
   );
 
   try {
@@ -55,7 +55,7 @@ export async function promptForUpdate(
       }
 
       console.log(
-        chalk.green(`\nRun the following command to update:\n\n  ${command}\n`)
+        chalk.green(`\nRun the following command to update:\n\n  ${command}\n`),
       );
 
       return { action: 'install', packageManager };
@@ -75,11 +75,11 @@ export async function promptForUpdate(
 
 export function showUpdateWarning(
   currentVersion: string,
-  latestVersion: string
+  latestVersion: string,
 ): void {
   console.log(
     chalk.yellow(
-      `⚠ Update available: husgit-cli ${latestVersion} (current: ${currentVersion}). Run: npm install -g husgit-cli@latest\n`
-    )
+      `⚠ Update available: husgit-cli ${latestVersion} (current: ${currentVersion}). Run: npm install -g husgit-cli@latest\n`,
+    ),
   );
 }

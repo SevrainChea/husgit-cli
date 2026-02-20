@@ -19,14 +19,14 @@ async function main() {
       if (versionCheck.updateAvailable) {
         const choice = await promptForUpdate(
           versionCheck.currentVersion,
-          versionCheck.latestVersion
+          versionCheck.latestVersion,
         );
 
         // Show warning banner if user declined
         if (choice.action === 'decline') {
           showUpdateWarning(
             versionCheck.currentVersion,
-            versionCheck.latestVersion
+            versionCheck.latestVersion,
           );
         }
       }
@@ -37,7 +37,7 @@ async function main() {
   }
 
   // Remove the skip flag from args so it doesn't confuse Commander
-  const filteredArgs = args.filter(arg => arg !== '--skip-update-check');
+  const filteredArgs = args.filter((arg) => arg !== '--skip-update-check');
 
   if (filteredArgs.length === 0) {
     await interactiveMenu();

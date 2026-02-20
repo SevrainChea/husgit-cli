@@ -41,7 +41,11 @@ async function runGroupList(options: { group?: string }): Promise<void> {
       for (const fullPath of group.projectPaths) {
         const project = config.projects[fullPath];
         if (!project) {
-          table.push([chalk.dim(fullPath), chalk.dim('(not found)'), ...envNames.map(() => '-')]);
+          table.push([
+            chalk.dim(fullPath),
+            chalk.dim('(not found)'),
+            ...envNames.map(() => '-'),
+          ]);
           continue;
         }
         table.push([

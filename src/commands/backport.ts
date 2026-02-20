@@ -108,7 +108,12 @@ async function runBackport(
     );
   }
 
-  const pairs = resolveBranchPairs(config, sourceEnv, 'backport', selectedProjects);
+  const pairs = resolveBranchPairs(
+    config,
+    sourceEnv,
+    'backport',
+    selectedProjects,
+  );
 
   if (pairs.length === 0) {
     console.log(chalk.yellow('No projects to backport.'));
