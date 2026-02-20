@@ -270,10 +270,12 @@ async function buildBranchMap(
 ): Promise<Record<string, string>> {
   const branchMap: Record<string, string> = {};
   for (const env of config.environments) {
+    const spinner = ora(`Fetching branches for "${env.name}"...`).start();
     const initialBranches = await client.getProjectBranches(
       project.fullPath,
       env.defaultBranch ?? '',
     );
+    spinner.stop();
 
     const branch = await promptSearch<string>(
       `Branch for "${env.name}" environment:`,

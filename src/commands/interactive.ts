@@ -147,19 +147,10 @@ async function groupsMenu(): Promise<void> {
       }
 
       case 'add-project': {
-        const config = loadConfig();
-        const groups = getGroupNames(config);
-        if (groups.length === 0) {
-          console.log(chalk.yellow('No groups. Create one first.'));
-          break;
-        }
-        const group = await promptSelect<string>(
-          'Select group:',
-          groups.map((g) => ({ name: g, value: g })),
-        );
-        const { groupAddProjectCommand } = await import('./group/addProject.js');
+        const { groupAddProjectCommand } =
+          await import('./group/addProject.js');
         const cmd = groupAddProjectCommand();
-        await cmd.parseAsync(['node', 'add-project', group]);
+        await cmd.parseAsync(['node', 'add-project']);
         break;
       }
 
@@ -213,7 +204,8 @@ async function projectsMenu(): Promise<void> {
   try {
     switch (action) {
       case 'add': {
-        const { groupAddProjectCommand } = await import('./group/addProject.js');
+        const { groupAddProjectCommand } =
+          await import('./group/addProject.js');
         const cmd = groupAddProjectCommand();
         await cmd.parseAsync(['node', 'add-project']);
         break;
