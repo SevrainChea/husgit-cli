@@ -227,6 +227,14 @@ export function validateConfig(config: unknown): HusgitConfig {
         `Environment "${envObj.name}" missing required field "order" (number)`,
       );
     }
+    if (
+      envObj.defaultBranch !== undefined &&
+      typeof envObj.defaultBranch !== 'string'
+    ) {
+      throw new Error(
+        `Environment "${envObj.name}" field "defaultBranch" must be a string`,
+      );
+    }
 
     if (envNames.has(envObj.name)) {
       throw new Error(`Duplicate environment name: "${envObj.name}"`);
