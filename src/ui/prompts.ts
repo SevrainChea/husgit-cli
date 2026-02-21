@@ -6,6 +6,7 @@ import {
   checkbox,
   Separator,
 } from '@inquirer/prompts';
+import chalk from 'chalk';
 import type { HusgitConfig, ProjectConfig, GitlabProject } from '../types.js';
 
 export async function promptInput(
@@ -125,7 +126,24 @@ export async function promptGitlabProjectCheckbox(
 ): Promise<GitlabProject[]> {
   if (projects.length === 0) return [];
 
-  const choices = projects.map((p) => ({
+  const filterTerm = await input({
+    message: 'Filter projects (leave blank for all):',
+  });
+
+  const filtered = filterTerm.trim()
+    ? projects.filter(
+        (p) =>
+          p.name.toLowerCase().includes(filterTerm.toLowerCase()) ||
+          p.fullPath.toLowerCase().includes(filterTerm.toLowerCase()),
+      )
+    : projects;
+
+  if (filtered.length === 0) {
+    console.log(chalk.yellow(`No projects match "${filterTerm}".`));
+    return [];
+  }
+
+  const choices = filtered.map((p) => ({
     name: p.name,
     value: p,
   }));
