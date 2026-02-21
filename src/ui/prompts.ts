@@ -130,11 +130,12 @@ export async function promptGitlabProjectCheckbox(
     message: 'Filter projects (leave blank for all):',
   });
 
-  const filtered = filterTerm.trim()
+  const term = filterTerm.trim().toLowerCase();
+  const filtered = term
     ? projects.filter(
         (p) =>
-          p.name.toLowerCase().includes(filterTerm.toLowerCase()) ||
-          p.fullPath.toLowerCase().includes(filterTerm.toLowerCase()),
+          p.name.toLowerCase().includes(term) ||
+          p.fullPath.toLowerCase().includes(term),
       )
     : projects;
 
