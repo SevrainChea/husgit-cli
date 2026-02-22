@@ -172,12 +172,12 @@ const filterCheckboxPrompt = createPrompt<
       setFilter('');
       setCursor(0);
     } else if (isUpKey(key)) {
-      if (filtered.length > 0) setCursor(Math.max(0, cursor - 1));
+      if (filtered.length > 0) setCursor(Math.max(0, safeCursor - 1));
     } else if (isDownKey(key)) {
       if (filtered.length > 0)
-        setCursor(Math.min(filtered.length - 1, cursor + 1));
+        setCursor(Math.min(filtered.length - 1, safeCursor + 1));
     } else if (isSpaceKey(key)) {
-      const item = filtered[cursor];
+      const item = filtered[safeCursor];
       if (item) {
         const next = new Set(selectedPaths);
         if (next.has(item.fullPath)) {
@@ -202,7 +202,8 @@ const filterCheckboxPrompt = createPrompt<
   });
 
   // Clamp cursor to current filtered length
-  const safeCursor = Math.min(cursor, Math.max(0, filtered.length - 1));
+  const safeCursor =
+    filtered.length === 0 ? 0 : Math.min(cursor, filtered.length - 1);
 
   // Paginate: keep cursor centered
   const halfPage = Math.floor(PAGE_SIZE / 2);
