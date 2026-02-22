@@ -215,7 +215,7 @@ pnpm test         # run tests
 pnpm dev
 ```
 
-`pnpm dev` runs tsup in watch mode — it recompiles `src/` into `dist/index.js` on every file save. There's no live-reload; to test a change, run the CLI manually in a second terminal after saving:
+`pnpm dev` runs tsdown in watch mode — it recompiles `src/` into `dist/index.js` on every file save. There's no live-reload; to test a change, run the CLI manually in a second terminal after saving:
 
 ```bash
 # Terminal 1
@@ -266,7 +266,7 @@ pnpm release major
 The release script automatically:
 1. Type checks your code (`tsc --noEmit`)
 2. Verifies formatting with Prettier
-3. Builds the package (`tsup`)
+3. Builds the package (`tsdown`)
 4. Bumps the version using `npm version` (creates git tag)
 5. Publishes to npm registry
 

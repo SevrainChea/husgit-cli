@@ -8,7 +8,7 @@ husgit-cli is a standalone CLI tool for orchestrating GitLab merge request workf
 
 ## Commands
 
-- **Build:** `pnpm build` (tsup, outputs to `dist/index.js` with shebang)
+- **Build:** `pnpm build` (tsdown, outputs to `dist/index.js` with shebang)
 - **Dev watch:** `pnpm dev`
 - **Format:** `pnpm format` (Prettier)
 - **Type check:** `pnpm typecheck`

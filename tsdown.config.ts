@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'tsdown';
 import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf8')) as {
@@ -8,10 +8,10 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf8')) as {
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
-  target: 'node18',
   outDir: 'dist',
   clean: true,
   sourcemap: true,
+  outExtensions: () => ({ js: '.js' }),
   banner: {
     js: '#!/usr/bin/env node',
   },
