@@ -37,10 +37,14 @@ This walks you through defining your environments in order (e.g., `develop → s
 
 ```bash
 husgit group add my-services
-husgit group add-project my-services
+husgit group add-project
 ```
 
-`add-project` will search your GitLab namespace and prompt you to map each environment to the corresponding branch for that project.
+`add-project` searches your GitLab namespace, lets you select one or more projects, and optionally maps each environment to a branch. Both the group assignment and per-environment branch mapping are optional — you can skip any environment you don't need. Pass a group name as an argument to pre-assign all selected projects to that group:
+
+```bash
+husgit group add-project my-services
+```
 
 ## Auto-Update
 
@@ -106,13 +110,19 @@ graph TD
 
 ## Usage
 
-**Promote all projects in a group to the next environment:**
+**Promote projects to the next environment:**
 
 ```bash
 husgit release staging
 ```
 
-Creates (or updates) MRs from each project's `staging` branch to `production`.
+Creates (or updates) MRs from each project's `staging` branch to `production`. Without flags, prompts you to select which projects to include. Use flags to skip the interactive selection:
+
+```bash
+husgit release staging --group my-services   # target a specific group
+husgit release staging --all                 # target all projects
+husgit release staging --dry-run             # preview without creating MRs
+```
 
 **Demote to a previous environment:**
 
@@ -120,7 +130,13 @@ Creates (or updates) MRs from each project's `staging` branch to `production`.
 husgit backport staging
 ```
 
-Creates MRs from `production` back to `staging`.
+Creates MRs from each project's `staging` branch back to `develop` (the previous environment). Supports the same flags as `release`:
+
+```bash
+husgit backport staging --group my-services
+husgit backport staging --all
+husgit backport staging --dry-run
+```
 
 **Check open MRs between environments:**
 
@@ -142,13 +158,17 @@ husgit
 | `husgit` | Launch interactive menu |
 | `husgit setup flow` | Configure environment chain |
 | `husgit group add <name>` | Create a new group |
-| `husgit group add-project <group>` | Add a project with branch mapping |
+| `husgit group add-project [group]` | Add one or more projects (optionally assign to a group) |
 | `husgit group list` | List all groups and their projects |
 | `husgit group remove <name>` | Remove a group |
-| `husgit release <env>` | Promote group to next environment |
-| `husgit backport <env>` | Demote group to previous environment |
+| `husgit project add` | Add a project to the registry (alias for `group add-project`) |
+| `husgit project list` | List all projects in the registry |
+| `husgit project remove [fullPath]` | Remove a project from the registry and all groups |
+| `husgit release [source-env]` | Promote projects to the next environment |
+| `husgit backport [source-env]` | Demote projects to the previous environment |
 | `husgit status` | Show open MRs between environments |
 | `husgit config export` | Copy config to clipboard for sharing |
+| `husgit config set <file>` | Load config from a JSON file (backs up current config) |
 
 ## Environment Variables
 
@@ -177,6 +197,7 @@ pnpm install
 pnpm build        # outputs to dist/index.js
 pnpm typecheck    # TypeScript type checking
 pnpm format       # Prettier formatting
+pnpm test         # run tests
 ```
 
 **Watch mode (rebuilds on save):**
