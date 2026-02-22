@@ -159,6 +159,10 @@ const filterCheckboxPrompt = createPrompt<
       : config.projects;
   }, [filter]);
 
+  // Clamp cursor to current filtered length
+  const safeCursor =
+    filtered.length === 0 ? 0 : Math.min(cursor, filtered.length - 1);
+
   useKeypress((key) => {
     if (status === 'done') return;
 
@@ -200,10 +204,6 @@ const filterCheckboxPrompt = createPrompt<
       setCursor(0);
     }
   });
-
-  // Clamp cursor to current filtered length
-  const safeCursor =
-    filtered.length === 0 ? 0 : Math.min(cursor, filtered.length - 1);
 
   // Paginate: keep cursor centered
   const halfPage = Math.floor(PAGE_SIZE / 2);
