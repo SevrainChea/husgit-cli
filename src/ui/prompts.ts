@@ -195,12 +195,12 @@ const filterCheckboxPrompt = createPrompt<
       setFilter(filter.slice(0, -1));
       setCursor(0);
     } else if (
-      key.sequence &&
-      key.sequence.length === 1 &&
+      (key as any).sequence &&
+      (key as any).sequence.length === 1 &&
       !key.ctrl &&
       !(key as any).meta
     ) {
-      setFilter(filter + key.sequence);
+      setFilter(filter + (key as any).sequence);
       setCursor(0);
     }
   });

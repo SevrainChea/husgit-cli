@@ -41,9 +41,7 @@ export function resolveBranchPairs(
     const targetBranch = project.branchMap[targetEnv.name];
 
     if (!sourceBranch || !targetBranch) {
-      throw new Error(
-        `Project "${project.name}" is missing branch mapping for "${sourceEnvName}" or "${targetEnv.name}"`,
-      );
+      continue;
     }
 
     pairs.push({ project, sourceBranch, targetBranch });
