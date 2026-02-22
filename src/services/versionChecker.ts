@@ -21,8 +21,11 @@ const CACHE_TTL = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
 function readPackageVersion(): string {
   try {
-    const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-    return packageJson.version;
+    const pkgPath = new URL('../../../package.json', import.meta.url);
+    const packageJson = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    return typeof packageJson.version === 'string'
+      ? packageJson.version
+      : '0.0.0';
   } catch {
     return '0.0.0'; // fallback
   }
@@ -31,7 +34,15 @@ function readPackageVersion(): string {
 function readCache(): CacheData | null {
   try {
     const data = JSON.parse(readFileSync(CACHE_FILE, 'utf8'));
-    return data;
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      typeof data.latestVersion !== 'string' ||
+      typeof data.checkedAt !== 'number'
+    ) {
+      return null;
+    }
+    return data as CacheData;
   } catch {
     return null;
   }

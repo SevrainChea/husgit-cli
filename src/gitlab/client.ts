@@ -74,7 +74,7 @@ export class GitlabClient {
       .query(checkCurrentUser, {})
       .toPromise();
 
-    if (error) throw new Error(`GitLab auth failed: ${error.message}`);
+    if (error) throw new Error('GitLab authentication failed. Check that your GITLAB_TOKEN is valid.');
     return data?.currentUser?.name || '';
   }
 
@@ -88,7 +88,7 @@ export class GitlabClient {
         .toPromise();
 
       if (result.error)
-        throw new Error(`Failed to fetch projects: ${result.error.message}`);
+        throw new Error('Failed to fetch projects from GitLab. Check your token permissions.');
 
       const data: GetProjectsData | undefined = result.data;
       const nodes = data?.projects?.nodes || [];
@@ -121,10 +121,11 @@ export class GitlabClient {
     fullPath: string,
     searchPattern: string = '',
   ): Promise<string[]> {
+    const sanitized = searchPattern.slice(0, 100).replace(/[^a-zA-Z0-9/_.\-]/g, '');
     const { data } = await this.gqlClient
       .query(getProjectBranches, {
         fullPath,
-        searchPattern: `${searchPattern}*`,
+        searchPattern: `${sanitized}*`,
       })
       .toPromise();
 
@@ -194,7 +195,7 @@ export class GitlabClient {
       .toPromise();
 
     if (mutRes.error) {
-      throw new Error(`Failed to update MR: ${mutRes.error.message}`);
+      throw new Error('Failed to update merge request. Check your token permissions and project access.');
     }
 
     return {
@@ -309,11 +310,16 @@ export class GitlabClient {
 
 export function createGitlabClient(): GitlabClient {
   const token = process.env.GITLAB_TOKEN;
-  if (!token) {
+  if (!token?.trim()) {
     throw new Error(
       'GITLAB_TOKEN environment variable is required. Set it with:\n  export GITLAB_TOKEN=your-token',
     );
   }
   const url = process.env.GITLAB_URL || 'https://gitlab.com';
+  if (!url.startsWith('https://')) {
+    throw new Error(
+      `GITLAB_URL must use HTTPS to protect your token. Got: ${url}\n  Set it with: export GITLAB_URL=https://your-gitlab-instance.com`,
+    );
+  }
   return new GitlabClient(token, url);
 }

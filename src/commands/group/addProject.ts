@@ -197,12 +197,30 @@ async function addSingleProject(
   let branchMap: Record<string, string>;
 
   if (branchMapJson) {
+    let parsed: unknown;
     try {
-      branchMap = JSON.parse(branchMapJson);
+      parsed = JSON.parse(branchMapJson);
     } catch {
       console.log(chalk.red('Invalid JSON for --branch-map'));
       return;
     }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      console.log(chalk.red('--branch-map must be a JSON object'));
+      return;
+    }
+    const entries = Object.entries(parsed as Record<string, unknown>);
+    const invalid = entries.find(
+      ([k, v]) => typeof k !== 'string' || typeof v !== 'string',
+    );
+    if (invalid) {
+      console.log(
+        chalk.red(
+          `--branch-map values must all be strings. Invalid entry: "${invalid[0]}": ${JSON.stringify(invalid[1])}`,
+        ),
+      );
+      return;
+    }
+    branchMap = parsed as Record<string, string>;
   } else {
     branchMap = await buildBranchMap(project, config, client);
   }

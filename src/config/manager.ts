@@ -71,12 +71,21 @@ export function loadConfig(): HusgitConfig {
     raw.projects = {};
   }
 
-  return raw as unknown as HusgitConfig;
+  try {
+    return validateConfig(raw);
+  } catch (err) {
+    throw new Error(
+      `Config file at ${CONFIG_PATH} is invalid: ${err instanceof Error ? err.message : String(err)}\n  Fix or delete the file and re-run setup.`,
+    );
+  }
 }
 
 export function saveConfig(config: HusgitConfig): void {
-  mkdirSync(CONFIG_DIR, { recursive: true });
-  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', {
+    encoding: 'utf-8',
+    mode: 0o600,
+  });
 }
 
 export function getConfigPath(): string {
@@ -196,10 +205,6 @@ export function validateConfig(config: unknown): HusgitConfig {
 
   if (!Array.isArray(cfg.environments)) {
     throw new Error('Config field "environments" must be an array');
-  }
-
-  if (cfg.environments.length === 0) {
-    throw new Error('Config must have at least one environment');
   }
 
   const envOrders = new Set<number>();
