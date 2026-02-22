@@ -143,13 +143,14 @@ husgit backport staging --dry-run
 ```bash
 husgit status release develop
 husgit status backport staging --group my-services
+husgit status release develop --hide-empty   # omit MRs with no diff
 ```
 
 Shows MRs for the given direction and source environment. For each project:
 - If an **open** MR exists, it is shown with its current CI pipeline status (`headPipeline`)
 - If no open MR exists, the **most recent merged** MR is shown as a fallback with its post-merge pipeline status
 
-The state column indicates whether the MR has actual changes or is empty (branches already in sync). The pipeline column shows overall status (`passed`, `failed`, `running`, etc.) with additional context — failing job names for failures, stage names for running/pending/canceled pipelines.
+The state column indicates whether the MR has actual changes or is empty (branches already in sync). Use `--hide-empty` to suppress MRs where the source and target branches are already in sync (`hasChanges = false`). The pipeline column shows overall status (`passed`, `failed`, `running`, etc.) with additional context — failing job names for failures, stage names for running/pending/canceled pipelines.
 
 After running `release` or `backport`, the CLI will suggest the matching `status` command to track your MRs.
 
@@ -174,7 +175,7 @@ husgit
 | `husgit project remove [fullPath]` | Remove a project from the registry and all groups |
 | `husgit release [source-env]` | Promote projects to the next environment |
 | `husgit backport [source-env]` | Demote projects to the previous environment |
-| `husgit status <type> <source-env>` | Show MRs (open, or most recent merged as fallback) with pipeline status |
+| `husgit status <type> <source-env> [--group <name>] [--hide-empty]` | Show MRs (open, or most recent merged as fallback) with pipeline status |
 | `husgit config export` | Copy config to clipboard for sharing |
 | `husgit config set <file>` | Load config from a JSON file (backs up current config) |
 
