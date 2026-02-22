@@ -45,7 +45,9 @@ function buildEnvPair(
 
 export function statusCommand(): Command {
   return new Command('status')
-    .description('Show open MRs for a given flow direction and source environment')
+    .description(
+      'Show open MRs for a given flow direction and source environment',
+    )
     .argument('<type>', 'Direction: release or backport')
     .argument('<source-env>', 'Source environment name')
     .option('--group <name>', 'Show only a specific group')
@@ -80,7 +82,11 @@ async function runStatus(
     return;
   }
 
-  const pair = buildEnvPair(config.environments, type as Direction, sourceEnvName);
+  const pair = buildEnvPair(
+    config.environments,
+    type as Direction,
+    sourceEnvName,
+  );
   if (!pair) {
     const msg =
       type === 'release'
@@ -182,11 +188,16 @@ async function runStatus(
   }
 
   const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
-  console.log(`\n${chalk.cyan(`${openMRs.length} open MR(s)`)} ${chalk.dim(`(${type}: ${arrow}):`)}`);
+  console.log(
+    `\n${chalk.cyan(`${openMRs.length} open MR(s)`)} ${chalk.dim(`(${type}: ${arrow}):`)}`,
+  );
   console.log(table.toString());
 }
 
-function formatState(state: string | undefined, hasChanges: boolean | undefined): string {
+function formatState(
+  state: string | undefined,
+  hasChanges: boolean | undefined,
+): string {
   if (!state) return '-';
   if (hasChanges === false) {
     return `${chalk.dim(state)} ${chalk.yellow('(empty)')}`;

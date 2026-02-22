@@ -214,7 +214,11 @@ export class GitlabClient {
             iid: string;
             webUrl: string;
             state: string;
-            diffStatsSummary?: { additions: number; deletions: number; fileCount: number };
+            diffStatsSummary?: {
+              additions: number;
+              deletions: number;
+              fileCount: number;
+            };
           };
         }) => ({
           id: e.node.id,
