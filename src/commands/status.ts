@@ -52,14 +52,14 @@ export function statusCommand(): Command {
     .argument('<type>', 'Direction: release or backport')
     .argument('<source-env>', 'Source environment name')
     .option('--group <name>', 'Show only a specific group')
-    .option('--no-empty', 'Hide MRs with no changes (hasChanges === false)')
+    .option('--hide-empty', 'Hide merge requests with no diff')
     .action(runStatus);
 }
 
 async function runStatus(
   type: string,
   sourceEnvName: string,
-  options: { group?: string; noEmpty?: boolean },
+  options: { group?: string; hideEmpty?: boolean },
 ): Promise<void> {
   const config = loadConfig();
 
@@ -171,7 +171,7 @@ async function runStatus(
 
   spinner.stop();
 
-  const visibleMRs = options.noEmpty
+  const visibleMRs = options.hideEmpty
     ? openMRs.filter((mr) => mr.hasChanges !== false)
     : openMRs;
 
@@ -203,7 +203,7 @@ async function runStatus(
   if (mergedCount > 0)
     parts.push(chalk.dim(`${mergedCount} merged (fallback)`));
   const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
-  const filterNote = options.noEmpty ? chalk.dim(' · empty MRs hidden') : '';
+  const filterNote = options.hideEmpty ? chalk.dim(' · empty MRs hidden') : '';
   console.log(
     `\n${parts.join(', ')} ${chalk.dim(`MR(s) (${type}: ${arrow}):`)}${filterNote}`,
   );
