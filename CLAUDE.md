@@ -13,7 +13,10 @@ husgit-cli is a standalone CLI tool for orchestrating GitLab merge request workf
 - **Format:** `pnpm format` (Prettier)
 - **Type check:** `pnpm typecheck`
 
-No test framework is configured yet.
+- **Test:** `pnpm test` (Vitest)
+- **Test with coverage:** `pnpm test:coverage`
+
+Test files live alongside source files as `*.test.ts`. Config: `vitest.config.ts`.
 
 After building, the CLI is available as `./dist/index.js` or via `pnpm link --global` as `husgit`.
 
@@ -50,15 +53,31 @@ Core orchestration logic:
 | `husgit setup flow` | `setup/flow.ts` | Configure environment chain |
 | `husgit group add <name>` | `group/add.ts` | Create empty group |
 | `husgit group add-project <group>` | `group/addProject.ts` | Add project with branch mapping |
-| `husgit group list` | `group/list.ts` | List groups/projects |
+| `husgit group list` | `group/list.ts` | List groups |
 | `husgit group remove <name>` | `group/remove.ts` | Remove group |
+| `husgit project add` | `project/add.ts` | Add project to a group with branch mapping |
+| `husgit project list` | `project/list.ts` | List all projects |
+| `husgit project remove` | `project/remove.ts` | Remove a project |
 | `husgit release <env>` | `release.ts` | Promote to next environment |
 | `husgit backport <env>` | `backport.ts` | Demote to previous environment |
 | `husgit status` | `status.ts` | Show open MRs between environments |
+| `husgit config export` | `config/export.ts` | Export current config as JSON |
+| `husgit config set <file>` | `config/set.ts` | Load config from a JSON file (creates backup) |
 
 ### UI Layer (`src/ui/prompts.ts`)
 
 Thin wrappers around `@inquirer/prompts` (input, select, confirm, search).
+
+## CLI ↔ Interactive Menu Parity
+
+**Every command must be accessible both via the CLI and via the interactive menu (`src/commands/interactive.ts`).**
+
+When adding a new command:
+1. Register it in `src/cli.ts` under the appropriate subcommand group.
+2. Add a corresponding option in the relevant `interactive.ts` menu (main menu or a submenu like `groupsMenu`/`projectsMenu`).
+3. Test that the feature works correctly from both entry points before considering it complete.
+
+When removing or renaming a command, update both `cli.ts` and `interactive.ts` together. Treat a missing interactive entry or a missing CLI entry as a bug.
 
 ## Code Conventions
 
