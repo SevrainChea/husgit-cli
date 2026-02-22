@@ -44,10 +44,12 @@ export async function promptConfirm(
 export async function promptSearch<T>(
   message: string,
   source: (term: string) => Promise<{ name: string; value: T }[]>,
+  pageSize?: number,
 ): Promise<T> {
   return search({
     message,
     source: async (term) => source(term || ''),
+    pageSize,
   });
 }
 

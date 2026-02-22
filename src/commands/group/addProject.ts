@@ -113,16 +113,14 @@ async function runGroupAddProject(
     if (!assignedGroup) {
       const groupNames = getGroupNames(config);
       if (groupNames.length > 0) {
-        const assignGroup = await promptConfirm(
-          `Assign "${project.name}" to a group? (optional)`,
-          false,
+        const groupChoice = await promptSelect<string>(
+          `Assign "${project.name}" to a group:`,
+          [
+            { name: 'No group', value: '' },
+            ...groupNames.map((g) => ({ name: g, value: g })),
+          ],
         );
-        if (assignGroup) {
-          assignedGroup = await promptSelect<string>(
-            'Select group:',
-            groupNames.map((g) => ({ name: g, value: g })),
-          );
-        }
+        if (groupChoice) assignedGroup = groupChoice;
       }
     }
 
@@ -227,16 +225,11 @@ async function addSingleProject(
   if (!groupName) {
     const groups = getGroupNames(config);
     if (groups.length > 0) {
-      const assignGroup = await promptConfirm(
-        'Assign to a group? (optional)',
-        false,
-      );
-      if (assignGroup) {
-        groupName = await promptSelect<string>(
-          'Select group:',
-          groups.map((g) => ({ name: g, value: g })),
-        );
-      }
+      const groupChoice = await promptSelect<string>('Assign to a group:', [
+        { name: 'No group', value: '' },
+        ...groups.map((g) => ({ name: g, value: g })),
+      ]);
+      if (groupChoice) groupName = groupChoice;
     }
   }
 
@@ -263,6 +256,8 @@ async function addSingleProject(
   }
 }
 
+const SKIP_BRANCH = '__skip__';
+
 async function buildBranchMap(
   project: GitlabProject,
   config: ReturnType<typeof loadConfig>,
@@ -277,21 +272,32 @@ async function buildBranchMap(
     );
     spinner.stop();
 
+    const skipOption = {
+      name: chalk.dim('Skip (no branch for this environment)'),
+      value: SKIP_BRANCH,
+    };
+
     const branch = await promptSearch<string>(
-      `Branch for "${env.name}" environment:`,
+      `Branch for "${env.name}" environment (optional):`,
       async (term) => {
         if (term) {
           const remote = await client.getProjectBranches(
             project.fullPath,
             term,
           );
-          return remote.map((b) => ({ name: b, value: b }));
+          return [...remote.map((b) => ({ name: b, value: b })), skipOption];
         }
-        return initialBranches.map((b) => ({ name: b, value: b }));
+        return [
+          ...initialBranches.map((b) => ({ name: b, value: b })),
+          skipOption,
+        ];
       },
+      5,
     );
 
-    branchMap[env.name] = branch;
+    if (branch !== SKIP_BRANCH) {
+      branchMap[env.name] = branch;
+    }
   }
   return branchMap;
 }
