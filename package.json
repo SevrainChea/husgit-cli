@@ -17,6 +17,7 @@
     "dev": "tsup --watch",
     "format": "prettier --write 'src/**/*.ts'",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm build && pnpm typecheck",
     "release": "node scripts/release.js",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
+    "@vitest/coverage-v8": "^4.0.18",
     "prettier": "^3.5.2",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",

@@ -25,11 +25,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm build
-
       - name: Type check
         run: pnpm typecheck
+
+      - name: Test with coverage
+        run: pnpm test:coverage
+
+      - name: Build
+        run: pnpm build
 
       - name: Publish
         run: npm publish --access public
