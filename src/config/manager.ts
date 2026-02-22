@@ -207,6 +207,12 @@ export function validateConfig(config: unknown): HusgitConfig {
     throw new Error('Config field "environments" must be an array');
   }
 
+  if (cfg.environments.length === 0) {
+    throw new Error(
+      'Config field "environments" must have at least one environment',
+    );
+  }
+
   const envOrders = new Set<number>();
   const envNames = new Set<string>();
 
