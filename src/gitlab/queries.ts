@@ -55,6 +55,11 @@ export const getProjectOpenedMergeRequestBySourceAndTarget = gql`
             iid
             webUrl
             state
+            diffStatsSummary {
+              additions
+              deletions
+              fileCount
+            }
           }
         }
       }

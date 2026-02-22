@@ -141,9 +141,11 @@ husgit backport staging --dry-run
 **Check open MRs between environments:**
 
 ```bash
-husgit status
-husgit status --type release --source-env develop
+husgit status release develop
+husgit status backport staging --group my-services
 ```
+
+Shows all open MRs for the given direction and source environment. The state column indicates whether each MR has actual changes to merge or is empty (branches are already in sync).
 
 **Interactive mode (no arguments):**
 
@@ -166,7 +168,7 @@ husgit
 | `husgit project remove [fullPath]` | Remove a project from the registry and all groups |
 | `husgit release [source-env]` | Promote projects to the next environment |
 | `husgit backport [source-env]` | Demote projects to the previous environment |
-| `husgit status` | Show open MRs between environments |
+| `husgit status <type> <source-env>` | Show open MRs for a direction and source environment |
 | `husgit config export` | Copy config to clipboard for sharing |
 | `husgit config set <file>` | Load config from a JSON file (backs up current config) |
 

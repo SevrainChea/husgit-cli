@@ -22,55 +22,41 @@ interface EnvPair {
   direction: Direction;
 }
 
-function buildEnvPairs(
+function buildEnvPair(
   environments: Environment[],
-  type: string | undefined,
-  sourceEnvName: string | undefined,
-): EnvPair[] {
-  const pairs: EnvPair[] = [];
+  type: Direction,
+  sourceEnvName: string,
+): EnvPair | null {
   const sorted = [...environments].sort((a, b) => a.order - b.order);
+  const sourceIdx = sorted.findIndex((e) => e.name === sourceEnvName);
 
-  if (!type || type === 'release') {
-    for (let i = 0; i < sorted.length - 1; i++) {
-      pairs.push({
-        sourceEnv: sorted[i],
-        targetEnv: sorted[i + 1],
-        direction: 'release',
-      });
-    }
+  if (sourceIdx === -1) return null;
+
+  if (type === 'release') {
+    const targetEnv = sorted[sourceIdx + 1];
+    if (!targetEnv) return null;
+    return { sourceEnv: sorted[sourceIdx], targetEnv, direction: 'release' };
+  } else {
+    const targetEnv = sorted[sourceIdx - 1];
+    if (!targetEnv) return null;
+    return { sourceEnv: sorted[sourceIdx], targetEnv, direction: 'backport' };
   }
-
-  if (!type || type === 'backport') {
-    for (let i = sorted.length - 1; i > 0; i--) {
-      pairs.push({
-        sourceEnv: sorted[i],
-        targetEnv: sorted[i - 1],
-        direction: 'backport',
-      });
-    }
-  }
-
-  if (sourceEnvName) {
-    return pairs.filter((p) => p.sourceEnv.name === sourceEnvName);
-  }
-
-  return pairs;
 }
 
 export function statusCommand(): Command {
   return new Command('status')
-    .description('Show open MRs between adjacent environments')
+    .description('Show open MRs for a given flow direction and source environment')
+    .argument('<type>', 'Direction: release or backport')
+    .argument('<source-env>', 'Source environment name')
     .option('--group <name>', 'Show only a specific group')
-    .option('--type <type>', 'Filter by direction: release or backport')
-    .option('--source-env <name>', 'Filter by source environment name')
     .action(runStatus);
 }
 
-async function runStatus(options: {
-  group?: string;
-  type?: string;
-  sourceEnv?: string;
-}): Promise<void> {
+async function runStatus(
+  type: string,
+  sourceEnvName: string,
+  options: { group?: string },
+): Promise<void> {
   const config = loadConfig();
 
   if (!hasEnvironments(config)) {
@@ -80,27 +66,30 @@ async function runStatus(options: {
     return;
   }
 
-  if (
-    options.type &&
-    options.type !== 'release' &&
-    options.type !== 'backport'
-  ) {
+  if (type !== 'release' && type !== 'backport') {
     console.log(
-      chalk.red(
-        `Invalid --type "${options.type}". Must be "release" or "backport".`,
-      ),
+      chalk.red(`Invalid type "${type}". Must be "release" or "backport".`),
     );
     return;
   }
 
-  if (options.sourceEnv && !getEnvironmentByName(config, options.sourceEnv)) {
+  if (!getEnvironmentByName(config, sourceEnvName)) {
     console.log(
-      chalk.red(`Environment "${options.sourceEnv}" not found in config.`),
+      chalk.red(`Environment "${sourceEnvName}" not found in config.`),
     );
     return;
   }
 
-  // Collect unique projects to query
+  const pair = buildEnvPair(config.environments, type as Direction, sourceEnvName);
+  if (!pair) {
+    const msg =
+      type === 'release'
+        ? `"${sourceEnvName}" has no next environment to release into.`
+        : `"${sourceEnvName}" has no previous environment to backport into.`;
+    console.log(chalk.yellow(msg));
+    return;
+  }
+
   let projectsToQuery: ProjectConfig[];
   if (options.group) {
     const group = config.groups[options.group];
@@ -130,81 +119,77 @@ async function runStatus(options: {
     }
   }
 
-  const envPairs = buildEnvPairs(
-    config.environments,
-    options.type,
-    options.sourceEnv,
-  );
-
-  if (envPairs.length === 0) {
-    console.log(chalk.yellow('No environment pairs match the given filters.'));
-    return;
-  }
-
   const client = createGitlabClient();
   const spinner = ora('Querying GitLab for open MRs...').start();
 
   const openMRs: OpenMergeRequest[] = [];
 
   for (const project of projectsToQuery) {
-    for (const pair of envPairs) {
-      const sourceBranch = project.branchMap[pair.sourceEnv.name];
-      const targetBranch = project.branchMap[pair.targetEnv.name];
+    const sourceBranch = project.branchMap[pair.sourceEnv.name];
+    const targetBranch = project.branchMap[pair.targetEnv.name];
 
-      if (!sourceBranch || !targetBranch) continue;
+    if (!sourceBranch || !targetBranch) continue;
 
-      try {
-        const mrs = await client.getOpenMergeRequests(
-          project.fullPath,
+    try {
+      const mrs = await client.getOpenMergeRequests(
+        project.fullPath,
+        sourceBranch,
+        targetBranch,
+      );
+
+      for (const mr of mrs) {
+        openMRs.push({
+          project,
+          groups: projectGroupsMap.get(project.fullPath) ?? [],
+          sourceEnv: pair.sourceEnv.name,
+          targetEnv: pair.targetEnv.name,
           sourceBranch,
           targetBranch,
-        );
-
-        for (const mr of mrs) {
-          openMRs.push({
-            project,
-            groups: projectGroupsMap.get(project.fullPath) ?? [],
-            sourceEnv: pair.sourceEnv.name,
-            targetEnv: pair.targetEnv.name,
-            sourceBranch,
-            targetBranch,
-            direction: pair.direction,
-            mrId: mr.iid,
-            mrUrl: mr.webUrl,
-            state: mr.state,
-          });
-        }
-      } catch (err) {
-        spinner.warn(
-          `Could not query "${project.name}": ${err instanceof Error ? err.message : String(err)}`,
-        );
+          direction: pair.direction,
+          mrId: mr.iid,
+          mrUrl: mr.webUrl,
+          state: mr.state,
+          hasChanges: mr.hasChanges,
+        });
       }
+    } catch (err) {
+      spinner.warn(
+        `Could not query "${project.name}": ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
   spinner.stop();
 
   if (openMRs.length === 0) {
-    console.log(chalk.green('\nNo open merge requests matching the filters.'));
+    console.log(chalk.green('\nNo open merge requests.'));
     return;
   }
 
   const table = new Table({
-    head: ['Groups', 'Project', 'Direction', 'Environments', 'State', 'URL'],
+    head: ['Groups', 'Project', 'State', 'URL'],
     style: { head: ['cyan'] },
   });
 
   for (const mr of openMRs) {
+    const stateLabel = formatState(mr.state, mr.hasChanges);
     table.push([
       mr.groups.join(', ') || chalk.dim('ungrouped'),
       mr.project.name,
-      mr.direction,
-      `${mr.sourceEnv} → ${mr.targetEnv}`,
-      mr.state || '-',
+      stateLabel,
       mr.mrUrl || '-',
     ]);
   }
 
-  console.log(`\n${chalk.cyan(`${openMRs.length} open MR(s):`)}`);
+  const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
+  console.log(`\n${chalk.cyan(`${openMRs.length} open MR(s)`)} ${chalk.dim(`(${type}: ${arrow}):`)}`);
   console.log(table.toString());
+}
+
+function formatState(state: string | undefined, hasChanges: boolean | undefined): string {
+  if (!state) return '-';
+  if (hasChanges === false) {
+    return `${chalk.dim(state)} ${chalk.yellow('(empty)')}`;
+  }
+  return chalk.green(state);
 }

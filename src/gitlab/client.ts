@@ -187,7 +187,15 @@ export class GitlabClient {
     projectFullPath: string,
     sourceBranch: string,
     targetBranch: string,
-  ): Promise<{ id: string; iid: string; webUrl: string; state: string }[]> {
+  ): Promise<
+    {
+      id: string;
+      iid: string;
+      webUrl: string;
+      state: string;
+      hasChanges: boolean;
+    }[]
+  > {
     const { data } = await this.gqlClient
       .query(getProjectOpenedMergeRequestBySourceAndTarget, {
         fullPath: projectFullPath,
@@ -201,8 +209,20 @@ export class GitlabClient {
       .filter((e: { node: unknown }) => e.node)
       .map(
         (e: {
-          node: { id: string; iid: string; webUrl: string; state: string };
-        }) => e.node,
+          node: {
+            id: string;
+            iid: string;
+            webUrl: string;
+            state: string;
+            diffStatsSummary?: { additions: number; deletions: number; fileCount: number };
+          };
+        }) => ({
+          id: e.node.id,
+          iid: e.node.iid,
+          webUrl: e.node.webUrl,
+          state: e.node.state,
+          hasChanges: (e.node.diffStatsSummary?.fileCount ?? 0) > 0,
+        }),
       );
   }
 }

@@ -56,4 +56,5 @@ export interface OpenMergeRequest {
   mrId?: string;
   mrUrl?: string;
   state?: string;
+  hasChanges?: boolean;
 }
