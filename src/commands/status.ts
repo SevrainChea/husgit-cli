@@ -52,13 +52,14 @@ export function statusCommand(): Command {
     .argument('<type>', 'Direction: release or backport')
     .argument('<source-env>', 'Source environment name')
     .option('--group <name>', 'Show only a specific group')
+    .option('--no-empty', 'Hide MRs with no changes (hasChanges === false)')
     .action(runStatus);
 }
 
 async function runStatus(
   type: string,
   sourceEnvName: string,
-  options: { group?: string },
+  options: { group?: string; noEmpty?: boolean },
 ): Promise<void> {
   const config = loadConfig();
 
@@ -170,7 +171,11 @@ async function runStatus(
 
   spinner.stop();
 
-  if (openMRs.length === 0) {
+  const visibleMRs = options.noEmpty
+    ? openMRs.filter((mr) => mr.hasChanges !== false)
+    : openMRs;
+
+  if (visibleMRs.length === 0) {
     console.log(chalk.green('\nNo open merge requests.'));
     return;
   }
@@ -180,7 +185,7 @@ async function runStatus(
     style: { head: ['cyan'] },
   });
 
-  for (const mr of openMRs) {
+  for (const mr of visibleMRs) {
     const stateLabel = formatState(mr.state, mr.hasChanges, mr.mergedAt);
     table.push([
       mr.groups.join(', ') || chalk.dim('ungrouped'),
@@ -191,15 +196,16 @@ async function runStatus(
     ]);
   }
 
-  const openCount = openMRs.filter((mr) => mr.state === 'opened').length;
-  const mergedCount = openMRs.filter((mr) => mr.state === 'merged').length;
+  const openCount = visibleMRs.filter((mr) => mr.state === 'opened').length;
+  const mergedCount = visibleMRs.filter((mr) => mr.state === 'merged').length;
   const parts = [];
   if (openCount > 0) parts.push(chalk.cyan(`${openCount} open`));
   if (mergedCount > 0)
     parts.push(chalk.dim(`${mergedCount} merged (fallback)`));
   const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
+  const filterNote = options.noEmpty ? chalk.dim(' · empty MRs hidden') : '';
   console.log(
-    `\n${parts.join(', ')} ${chalk.dim(`MR(s) (${type}: ${arrow}):`)}`,
+    `\n${parts.join(', ')} ${chalk.dim(`MR(s) (${type}: ${arrow}):`)}${filterNote}`,
   );
   console.log(table.toString());
 }
