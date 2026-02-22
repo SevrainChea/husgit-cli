@@ -195,7 +195,8 @@ async function runStatus(
   const mergedCount = openMRs.filter((mr) => mr.state === 'merged').length;
   const parts = [];
   if (openCount > 0) parts.push(chalk.cyan(`${openCount} open`));
-  if (mergedCount > 0) parts.push(chalk.dim(`${mergedCount} merged (fallback)`));
+  if (mergedCount > 0)
+    parts.push(chalk.dim(`${mergedCount} merged (fallback)`));
   const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
   console.log(
     `\n${parts.join(', ')} ${chalk.dim(`MR(s) (${type}: ${arrow}):`)}`,
@@ -213,14 +214,18 @@ function formatPipeline(pipeline: MRPipeline | null | undefined): string {
         .filter((j) => j.status.toLowerCase() === 'failed')
         .map((j) => j.name)
         .join(', ');
-      return chalk.red('failed') + (failedJobs ? chalk.dim(` (${failedJobs})`) : '');
+      return (
+        chalk.red('failed') + (failedJobs ? chalk.dim(` (${failedJobs})`) : '')
+      );
     }
     case 'running': {
       const stages = pipeline.jobs
         .filter((j) => j.status.toLowerCase() === 'running')
         .map((j) => j.stageName)
         .join(', ');
-      return chalk.yellow('running') + (stages ? chalk.dim(` (${stages})`) : '');
+      return (
+        chalk.yellow('running') + (stages ? chalk.dim(` (${stages})`) : '')
+      );
     }
     case 'pending': {
       const stages = pipeline.jobs

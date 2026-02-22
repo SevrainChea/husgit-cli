@@ -16,17 +16,14 @@ interface RawPipelineJob {
 function deduplicateJobsByStage(jobs: RawPipelineJob[]): PipelineJob[] {
   // Reverse so most recent retry wins when reducing by stage
   return Object.values(
-    [...jobs].reverse().reduce(
-      (acc: Record<string, PipelineJob>, job) => {
-        acc[job.stage.id] = {
-          name: job.name,
-          status: job.status,
-          stageName: job.stage.name,
-        };
-        return acc;
-      },
-      {},
-    ),
+    [...jobs].reverse().reduce((acc: Record<string, PipelineJob>, job) => {
+      acc[job.stage.id] = {
+        name: job.name,
+        status: job.status,
+        stageName: job.stage.name,
+      };
+      return acc;
+    }, {}),
   );
 }
 import {
@@ -231,7 +228,10 @@ export class GitlabClient {
       mergedAt?: string;
       mergeCommitSha?: string;
       diffStatsSummary?: { fileCount: number };
-      headPipeline?: { status: string; jobs: { nodes: RawPipelineJob[] } } | null;
+      headPipeline?: {
+        status: string;
+        jobs: { nodes: RawPipelineJob[] };
+      } | null;
     };
 
     const { data } = await this.gqlClient

@@ -158,7 +158,9 @@ async function runBackport(
   printResults(results);
 
   console.log(
-    chalk.dim(`\nTip: track MR state with: husgit status backport ${sourceEnv}`),
+    chalk.dim(
+      `\nTip: track MR state with: husgit status backport ${sourceEnv}`,
+    ),
   );
 }
 
