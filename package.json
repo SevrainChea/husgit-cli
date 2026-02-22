@@ -32,6 +32,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@inquirer/core": "^11.1.4",
     "@inquirer/prompts": "^7.3.2",
     "@urql/core": "^5.1.1",
     "axios": "^1.7.9",

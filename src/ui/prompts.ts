@@ -6,6 +6,17 @@ import {
   checkbox,
   Separator,
 } from '@inquirer/prompts';
+import {
+  createPrompt,
+  useState,
+  useMemo,
+  useKeypress,
+  isEnterKey,
+  isBackspaceKey,
+  isUpKey,
+  isDownKey,
+  isSpaceKey,
+} from '@inquirer/core';
 import chalk from 'chalk';
 import type { HusgitConfig, ProjectConfig, GitlabProject } from '../types.js';
 
@@ -121,37 +132,128 @@ export async function promptProjectMultiSelect(
     .filter((p): p is ProjectConfig => p !== undefined);
 }
 
+const PAGE_SIZE = 15;
+
+type FilterCheckboxConfig = {
+  message: string;
+  projects: GitlabProject[];
+};
+
+const filterCheckboxPrompt = createPrompt<
+  GitlabProject[],
+  FilterCheckboxConfig
+>((config, done) => {
+  const [filter, setFilter] = useState('');
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [cursor, setCursor] = useState(0);
+  const [status, setStatus] = useState<'idle' | 'done'>('idle');
+
+  const filtered = useMemo(() => {
+    const term = filter.toLowerCase();
+    return term
+      ? config.projects.filter(
+          (p) =>
+            p.name.toLowerCase().includes(term) ||
+            p.fullPath.toLowerCase().includes(term),
+        )
+      : config.projects;
+  }, [filter]);
+
+  useKeypress((key) => {
+    if (status === 'done') return;
+
+    if (isEnterKey(key)) {
+      const result = config.projects.filter((p) =>
+        selectedPaths.has(p.fullPath),
+      );
+      setStatus('done');
+      done(result);
+    } else if (key.name === 'escape') {
+      setFilter('');
+      setCursor(0);
+    } else if (isUpKey(key)) {
+      if (filtered.length > 0) setCursor(Math.max(0, cursor - 1));
+    } else if (isDownKey(key)) {
+      if (filtered.length > 0)
+        setCursor(Math.min(filtered.length - 1, cursor + 1));
+    } else if (isSpaceKey(key)) {
+      const item = filtered[cursor];
+      if (item) {
+        const next = new Set(selectedPaths);
+        if (next.has(item.fullPath)) {
+          next.delete(item.fullPath);
+        } else {
+          next.add(item.fullPath);
+        }
+        setSelectedPaths(next);
+      }
+    } else if (isBackspaceKey(key)) {
+      setFilter(filter.slice(0, -1));
+      setCursor(0);
+    } else if (
+      key.sequence &&
+      key.sequence.length === 1 &&
+      !key.ctrl &&
+      !(key as any).meta
+    ) {
+      setFilter(filter + key.sequence);
+      setCursor(0);
+    }
+  });
+
+  // Clamp cursor to current filtered length
+  const safeCursor = Math.min(cursor, Math.max(0, filtered.length - 1));
+
+  // Paginate: keep cursor centered
+  const halfPage = Math.floor(PAGE_SIZE / 2);
+  const scrollOffset = Math.max(
+    0,
+    Math.min(safeCursor - halfPage, filtered.length - PAGE_SIZE),
+  );
+  const visibleItems = filtered.slice(scrollOffset, scrollOffset + PAGE_SIZE);
+
+  const filterLine = `${chalk.bold('Filter:')} ${filter}▊`;
+
+  const listLines =
+    filtered.length === 0
+      ? [chalk.yellow('  No projects match filter.')]
+      : visibleItems.map((project, i) => {
+          const actualIndex = scrollOffset + i;
+          const isCursor = actualIndex === safeCursor;
+          const isSelected = selectedPaths.has(project.fullPath);
+          const checkboxChar = isSelected ? chalk.green('◉') : '◯';
+          const pointer = isCursor ? chalk.cyan('❯') : ' ';
+          const name = isCursor ? chalk.cyan(project.name) : project.name;
+          return `${pointer} ${checkboxChar} ${name}`;
+        });
+
+  const scrollInfo =
+    filtered.length > PAGE_SIZE
+      ? chalk.dim(
+          ` (${scrollOffset + 1}–${Math.min(scrollOffset + PAGE_SIZE, filtered.length)} of ${filtered.length})`,
+        )
+      : '';
+  const selectedInfo =
+    selectedPaths.size > 0
+      ? chalk.green(` · ${selectedPaths.size} selected`)
+      : '';
+  const hint = chalk.dim(
+    '↑↓ navigate  space select  esc clear filter  enter confirm',
+  );
+
+  const mainLine = `${chalk.bold(config.message)}\n${filterLine}`;
+  const bottomContent =
+    listLines.join('\n') + `\n${hint}${scrollInfo}${selectedInfo}`;
+
+  return [mainLine, bottomContent];
+});
+
 export async function promptGitlabProjectCheckbox(
   projects: GitlabProject[],
 ): Promise<GitlabProject[]> {
   if (projects.length === 0) return [];
-
-  const filterTerm = await input({
-    message: 'Filter projects (leave blank for all):',
-  });
-
-  const term = filterTerm.trim().toLowerCase();
-  const filtered = term
-    ? projects.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.fullPath.toLowerCase().includes(term),
-      )
-    : projects;
-
-  if (filtered.length === 0) {
-    console.log(chalk.yellow(`No projects match "${filterTerm}".`));
-    return [];
-  }
-
-  const choices = filtered.map((p) => ({
-    name: p.name,
-    value: p,
-  }));
-
-  return checkbox<GitlabProject>({
-    message: 'Select projects to add (space to select, enter to confirm):',
-    choices,
-    pageSize: 20,
+  return filterCheckboxPrompt({
+    message: 'Select projects to add:',
+    projects,
   });
 }
