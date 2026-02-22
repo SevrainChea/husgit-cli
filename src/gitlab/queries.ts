@@ -60,6 +60,73 @@ export const getProjectOpenedMergeRequestBySourceAndTarget = gql`
               deletions
               fileCount
             }
+            headPipeline {
+              status
+              jobs {
+                nodes {
+                  name
+                  status
+                  stage {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const getMostRecentMergedMergeRequest = gql`
+  query getMostRecentMergedMergeRequest(
+    $fullPath: ID!
+    $sourceBranches: [String!]
+    $targetBranches: [String!]
+  ) {
+    project(fullPath: $fullPath) {
+      mergeRequests(
+        sourceBranches: $sourceBranches
+        targetBranches: $targetBranches
+        state: merged
+        sort: MERGED_AT_DESC
+        first: 1
+      ) {
+        edges {
+          node {
+            id
+            iid
+            webUrl
+            state
+            mergedAt
+            mergeCommitSha
+            diffStatsSummary {
+              fileCount
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const getProjectPipelineBySha = gql`
+  query getProjectPipelineBySha($fullPath: ID!, $sha: String) {
+    project(fullPath: $fullPath) {
+      pipelines(sha: $sha) {
+        nodes {
+          status
+          jobs {
+            nodes {
+              name
+              status
+              stage {
+                id
+                name
+              }
+            }
           }
         }
       }

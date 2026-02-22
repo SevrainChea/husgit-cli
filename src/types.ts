@@ -45,6 +45,17 @@ export interface BranchPair {
 
 export type Direction = 'release' | 'backport';
 
+export interface PipelineJob {
+  name: string;
+  status: string;
+  stageName: string;
+}
+
+export interface MRPipeline {
+  status: string;
+  jobs: PipelineJob[];
+}
+
 export interface OpenMergeRequest {
   project: ProjectConfig;
   groups: string[];
@@ -57,4 +68,6 @@ export interface OpenMergeRequest {
   mrUrl?: string;
   state?: string;
   hasChanges?: boolean;
+  mergedAt?: string;
+  pipeline?: MRPipeline | null;
 }

@@ -5,12 +5,37 @@ import {
   type OperationResult,
 } from '@urql/core';
 import axios, { type AxiosInstance } from 'axios';
-import type { GitlabProject } from '../types.js';
+import type { GitlabProject, PipelineJob } from '../types.js';
+
+interface RawPipelineJob {
+  name: string;
+  status: string;
+  stage: { id: string; name: string };
+}
+
+function deduplicateJobsByStage(jobs: RawPipelineJob[]): PipelineJob[] {
+  // Reverse so most recent retry wins when reducing by stage
+  return Object.values(
+    [...jobs].reverse().reduce(
+      (acc: Record<string, PipelineJob>, job) => {
+        acc[job.stage.id] = {
+          name: job.name,
+          status: job.status,
+          stageName: job.stage.name,
+        };
+        return acc;
+      },
+      {},
+    ),
+  );
+}
 import {
   checkCurrentUser,
   getProjects,
   getProjectBranches,
   getProjectOpenedMergeRequestBySourceAndTarget,
+  getMostRecentMergedMergeRequest,
+  getProjectPipelineBySha,
   updateProjectMergeRequest,
 } from './queries.js';
 
@@ -194,8 +219,21 @@ export class GitlabClient {
       webUrl: string;
       state: string;
       hasChanges: boolean;
+      mergedAt?: string;
+      pipeline?: { status: string; jobs: PipelineJob[] } | null;
     }[]
   > {
+    type MRNode = {
+      id: string;
+      iid: string;
+      webUrl: string;
+      state: string;
+      mergedAt?: string;
+      mergeCommitSha?: string;
+      diffStatsSummary?: { fileCount: number };
+      headPipeline?: { status: string; jobs: { nodes: RawPipelineJob[] } } | null;
+    };
+
     const { data } = await this.gqlClient
       .query(getProjectOpenedMergeRequestBySourceAndTarget, {
         fullPath: projectFullPath,
@@ -204,30 +242,68 @@ export class GitlabClient {
       })
       .toPromise();
 
-    const edges = data?.project?.mergeRequests?.edges || [];
-    return edges
-      .filter((e: { node: unknown }) => e.node)
-      .map(
-        (e: {
-          node: {
-            id: string;
-            iid: string;
-            webUrl: string;
-            state: string;
-            diffStatsSummary?: {
-              additions: number;
-              deletions: number;
-              fileCount: number;
-            };
+    const openEdges: { node: MRNode }[] = (
+      data?.project?.mergeRequests?.edges || []
+    ).filter((e: { node: unknown }) => e.node);
+
+    if (openEdges.length > 0) {
+      return openEdges.map((e) => ({
+        id: e.node.id,
+        iid: e.node.iid,
+        webUrl: e.node.webUrl,
+        state: e.node.state,
+        hasChanges: (e.node.diffStatsSummary?.fileCount ?? 0) > 0,
+        pipeline: e.node.headPipeline
+          ? {
+              status: e.node.headPipeline.status,
+              jobs: deduplicateJobsByStage(e.node.headPipeline.jobs.nodes),
+            }
+          : null,
+      }));
+    }
+
+    const { data: mergedData } = await this.gqlClient
+      .query(getMostRecentMergedMergeRequest, {
+        fullPath: projectFullPath,
+        sourceBranches: [sourceBranch],
+        targetBranches: [targetBranch],
+      })
+      .toPromise();
+
+    const mergedEdges: { node: MRNode }[] = (
+      mergedData?.project?.mergeRequests?.edges || []
+    ).filter((e: { node: unknown }) => e.node);
+
+    const results = [];
+    for (const e of mergedEdges) {
+      let pipeline = null;
+      if (e.node.mergeCommitSha) {
+        const { data: pipelineData } = await this.gqlClient
+          .query(getProjectPipelineBySha, {
+            fullPath: projectFullPath,
+            sha: e.node.mergeCommitSha,
+          })
+          .toPromise();
+        const pipelineNode =
+          pipelineData?.project?.pipelines?.nodes?.at(-1) ?? null;
+        if (pipelineNode) {
+          pipeline = {
+            status: pipelineNode.status,
+            jobs: deduplicateJobsByStage(pipelineNode.jobs.nodes),
           };
-        }) => ({
-          id: e.node.id,
-          iid: e.node.iid,
-          webUrl: e.node.webUrl,
-          state: e.node.state,
-          hasChanges: (e.node.diffStatsSummary?.fileCount ?? 0) > 0,
-        }),
-      );
+        }
+      }
+      results.push({
+        id: e.node.id,
+        iid: e.node.iid,
+        webUrl: e.node.webUrl,
+        state: e.node.state,
+        hasChanges: (e.node.diffStatsSummary?.fileCount ?? 0) > 0,
+        mergedAt: e.node.mergedAt,
+        pipeline,
+      });
+    }
+    return results;
   }
 }
 

@@ -11,6 +11,7 @@ import {
 import { createGitlabClient } from '../gitlab/client.js';
 import type {
   OpenMergeRequest,
+  MRPipeline,
   Environment,
   Direction,
   ProjectConfig,
@@ -156,6 +157,8 @@ async function runStatus(
           mrUrl: mr.webUrl,
           state: mr.state,
           hasChanges: mr.hasChanges,
+          mergedAt: mr.mergedAt,
+          pipeline: mr.pipeline,
         });
       }
     } catch (err) {
@@ -173,32 +176,85 @@ async function runStatus(
   }
 
   const table = new Table({
-    head: ['Groups', 'Project', 'State', 'URL'],
+    head: ['Groups', 'Project', 'State', 'Pipeline', 'URL'],
     style: { head: ['cyan'] },
   });
 
   for (const mr of openMRs) {
-    const stateLabel = formatState(mr.state, mr.hasChanges);
+    const stateLabel = formatState(mr.state, mr.hasChanges, mr.mergedAt);
     table.push([
       mr.groups.join(', ') || chalk.dim('ungrouped'),
       mr.project.name,
       stateLabel,
+      formatPipeline(mr.pipeline),
       mr.mrUrl || '-',
     ]);
   }
 
+  const openCount = openMRs.filter((mr) => mr.state === 'opened').length;
+  const mergedCount = openMRs.filter((mr) => mr.state === 'merged').length;
+  const parts = [];
+  if (openCount > 0) parts.push(chalk.cyan(`${openCount} open`));
+  if (mergedCount > 0) parts.push(chalk.dim(`${mergedCount} merged (fallback)`));
   const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
   console.log(
-    `\n${chalk.cyan(`${openMRs.length} open MR(s)`)} ${chalk.dim(`(${type}: ${arrow}):`)}`,
+    `\n${parts.join(', ')} ${chalk.dim(`MR(s) (${type}: ${arrow}):`)}`,
   );
   console.log(table.toString());
+}
+
+function formatPipeline(pipeline: MRPipeline | null | undefined): string {
+  if (!pipeline) return chalk.dim('-');
+  switch (pipeline.status.toLowerCase()) {
+    case 'success':
+      return chalk.green('passed');
+    case 'failed': {
+      const failedJobs = pipeline.jobs
+        .filter((j) => j.status.toLowerCase() === 'failed')
+        .map((j) => j.name)
+        .join(', ');
+      return chalk.red('failed') + (failedJobs ? chalk.dim(` (${failedJobs})`) : '');
+    }
+    case 'running': {
+      const stages = pipeline.jobs
+        .filter((j) => j.status.toLowerCase() === 'running')
+        .map((j) => j.stageName)
+        .join(', ');
+      return chalk.yellow('running') + (stages ? chalk.dim(` (${stages})`) : '');
+    }
+    case 'pending': {
+      const stages = pipeline.jobs
+        .filter((j) => j.status.toLowerCase() === 'pending')
+        .map((j) => j.stageName)
+        .join(', ');
+      return chalk.dim('pending') + (stages ? chalk.dim(` (${stages})`) : '');
+    }
+    case 'canceled': {
+      const stages = pipeline.jobs
+        .filter((j) => j.status.toLowerCase() === 'canceled')
+        .map((j) => j.stageName)
+        .join(', ');
+      return chalk.dim('canceled') + (stages ? chalk.dim(` (${stages})`) : '');
+    }
+    case 'skipped':
+      return chalk.dim('skipped');
+    default:
+      return chalk.dim(pipeline.status.toLowerCase());
+  }
 }
 
 function formatState(
   state: string | undefined,
   hasChanges: boolean | undefined,
+  mergedAt?: string,
 ): string {
   if (!state) return '-';
+  if (state === 'merged') {
+    const date = mergedAt
+      ? chalk.dim(` (${new Date(mergedAt).toLocaleDateString()})`)
+      : '';
+    return `${chalk.dim('merged')}${date}`;
+  }
   if (hasChanges === false) {
     return `${chalk.dim(state)} ${chalk.yellow('(empty)')}`;
   }
