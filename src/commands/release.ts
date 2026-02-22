@@ -154,6 +154,10 @@ async function runRelease(
 
   spinner.stop();
   printResults(results);
+
+  console.log(
+    chalk.dim(`\nTip: track MR state with: husgit status release ${sourceEnv}`),
+  );
 }
 
 function printResults(results: MergeRequestResult[]): void {

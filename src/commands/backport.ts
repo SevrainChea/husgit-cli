@@ -156,6 +156,10 @@ async function runBackport(
 
   spinner.stop();
   printResults(results);
+
+  console.log(
+    chalk.dim(`\nTip: track MR state with: husgit status backport ${sourceEnv}`),
+  );
 }
 
 function printResults(results: MergeRequestResult[]): void {
