@@ -241,9 +241,9 @@ describe('addProjectToGroup', () => {
   });
 
   it('throws when the group does not exist', () => {
-    expect(() =>
-      addProjectToGroup(makeConfig(), 'ghost', 'org/app'),
-    ).toThrow('Group "ghost" does not exist');
+    expect(() => addProjectToGroup(makeConfig(), 'ghost', 'org/app')).toThrow(
+      'Group "ghost" does not exist',
+    );
   });
 
   it('throws when the project path is already in the group', () => {
@@ -461,9 +461,9 @@ describe('validateConfig', () => {
   });
 
   it('throws when gitlabUrl is present but not a string', () => {
-    expect(() =>
-      validateConfig({ ...validRaw, gitlabUrl: 42 }),
-    ).toThrow('"gitlabUrl" must be a string');
+    expect(() => validateConfig({ ...validRaw, gitlabUrl: 42 })).toThrow(
+      '"gitlabUrl" must be a string',
+    );
   });
 
   it('throws when an environment entry is not an object', () => {
@@ -489,7 +489,10 @@ describe('validateConfig', () => {
 
   it('throws when a group is missing projectPaths array', () => {
     expect(() =>
-      validateConfig({ ...validRaw, groups: { backend: { projectPaths: 'x' } } }),
+      validateConfig({
+        ...validRaw,
+        groups: { backend: { projectPaths: 'x' } },
+      }),
     ).toThrow('"projectPaths" must be an array');
   });
 
@@ -503,8 +506,8 @@ describe('validateConfig', () => {
   });
 
   it('throws when projects field is an array', () => {
-    expect(() =>
-      validateConfig({ ...validRaw, projects: [] }),
-    ).toThrow('"projects" must be an object');
+    expect(() => validateConfig({ ...validRaw, projects: [] })).toThrow(
+      '"projects" must be an object',
+    );
   });
 });

@@ -169,10 +169,12 @@ function makePair(overrides: Partial<BranchPair> = {}): BranchPair {
   };
 }
 
-function makeMockClient(overrides: {
-  createMergeRequest?: ReturnType<typeof vi.fn>;
-  updateMergeRequest?: ReturnType<typeof vi.fn>;
-} = {}): GitlabClient {
+function makeMockClient(
+  overrides: {
+    createMergeRequest?: ReturnType<typeof vi.fn>;
+    updateMergeRequest?: ReturnType<typeof vi.fn>;
+  } = {},
+): GitlabClient {
   return {
     createMergeRequest:
       overrides.createMergeRequest ??
@@ -219,9 +221,7 @@ describe('executeMergeRequests', () => {
       createMergeRequest: vi
         .fn()
         .mockRejectedValue(new Error('MR_ALREADY_EXISTS')),
-      updateMergeRequest: vi
-        .fn()
-        .mockRejectedValue(new Error('Update failed')),
+      updateMergeRequest: vi.fn().mockRejectedValue(new Error('Update failed')),
     });
     const results = await executeMergeRequests(
       client,
@@ -234,9 +234,7 @@ describe('executeMergeRequests', () => {
 
   it('returns status "failed" when create throws an unexpected error', async () => {
     const client = makeMockClient({
-      createMergeRequest: vi
-        .fn()
-        .mockRejectedValue(new Error('Network error')),
+      createMergeRequest: vi.fn().mockRejectedValue(new Error('Network error')),
     });
     const results = await executeMergeRequests(
       client,
