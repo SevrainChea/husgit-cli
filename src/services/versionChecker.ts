@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -19,16 +19,10 @@ const CACHE_DIR = join(homedir(), '.husgit');
 const CACHE_FILE = join(CACHE_DIR, 'version-cache.json');
 const CACHE_TTL = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
+declare const __HUSGIT_VERSION__: string;
+
 function readPackageVersion(): string {
-  try {
-    const pkgPath = new URL('../../../package.json', import.meta.url);
-    const packageJson = JSON.parse(readFileSync(pkgPath, 'utf8'));
-    return typeof packageJson.version === 'string'
-      ? packageJson.version
-      : '0.0.0';
-  } catch {
-    return '0.0.0'; // fallback
-  }
+  return __HUSGIT_VERSION__;
 }
 
 function readCache(): CacheData | null {
