@@ -74,7 +74,10 @@ export class GitlabClient {
       .query(checkCurrentUser, {})
       .toPromise();
 
-    if (error) throw new Error('GitLab authentication failed. Check that your GITLAB_TOKEN is valid.');
+    if (error)
+      throw new Error(
+        'GitLab authentication failed. Check that your GITLAB_TOKEN is valid.',
+      );
     return data?.currentUser?.name || '';
   }
 
@@ -88,7 +91,9 @@ export class GitlabClient {
         .toPromise();
 
       if (result.error)
-        throw new Error('Failed to fetch projects from GitLab. Check your token permissions.');
+        throw new Error(
+          'Failed to fetch projects from GitLab. Check your token permissions.',
+        );
 
       const data: GetProjectsData | undefined = result.data;
       const nodes = data?.projects?.nodes || [];
@@ -121,7 +126,9 @@ export class GitlabClient {
     fullPath: string,
     searchPattern: string = '',
   ): Promise<string[]> {
-    const sanitized = searchPattern.slice(0, 100).replace(/[^a-zA-Z0-9/_.\-]/g, '');
+    const sanitized = searchPattern
+      .slice(0, 100)
+      .replace(/[^a-zA-Z0-9/_.\-]/g, '');
     const { data } = await this.gqlClient
       .query(getProjectBranches, {
         fullPath,
@@ -195,7 +202,9 @@ export class GitlabClient {
       .toPromise();
 
     if (mutRes.error) {
-      throw new Error('Failed to update merge request. Check your token permissions and project access.');
+      throw new Error(
+        'Failed to update merge request. Check your token permissions and project access.',
+      );
     }
 
     return {
