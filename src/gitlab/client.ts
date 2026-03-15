@@ -43,6 +43,8 @@ interface GetProjectsData {
   };
 }
 
+export const MR_ALREADY_EXISTS = 'MR_ALREADY_EXISTS';
+
 export class GitlabClient {
   private gqlClient: Client;
   private axiosClient: AxiosInstance;
@@ -162,7 +164,7 @@ export class GitlabClient {
       };
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response?.status === 409) {
-        throw new Error('MR_ALREADY_EXISTS');
+        throw new Error(MR_ALREADY_EXISTS);
       }
       throw error;
     }
