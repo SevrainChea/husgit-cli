@@ -14,6 +14,10 @@ import { releaseCommand } from './commands/release.js';
 import { backportCommand } from './commands/backport.js';
 import { statusCommand } from './commands/status.js';
 import { configCommand } from './commands/config/index.js';
+import {
+  completionCommand,
+  internalCompleteCommand,
+} from './commands/completion.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(
@@ -54,6 +58,10 @@ export function createProgram(): Command {
 
   // Config
   program.addCommand(configCommand());
+
+  // Shell completion
+  program.addCommand(completionCommand());
+  program.addCommand(internalCompleteCommand(), { hidden: true });
 
   return program;
 }
