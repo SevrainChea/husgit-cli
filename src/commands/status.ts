@@ -44,6 +44,8 @@ function buildEnvPair(
   }
 }
 
+const STATUS_COLUMNS = ['Groups', 'Project', 'State', 'Pipeline', 'URL'];
+
 export function statusCommand(): Command {
   return new Command('status')
     .description(
@@ -53,13 +55,26 @@ export function statusCommand(): Command {
     .argument('<source-env>', 'Source environment name')
     .option('--group <name>', 'Show only a specific group')
     .option('--hide-empty', 'Hide merge requests with no diff')
+    .option(
+      '--filter <text>',
+      'Filter rows where the project name contains <text> (case-insensitive)',
+    )
+    .option(
+      `--sort <column>`,
+      `Sort rows by column (one of: ${STATUS_COLUMNS.join(', ')})`,
+    )
     .action(runStatus);
 }
 
 async function runStatus(
   type: string,
   sourceEnvName: string,
-  options: { group?: string; hideEmpty?: boolean },
+  options: {
+    group?: string;
+    hideEmpty?: boolean;
+    filter?: string;
+    sort?: string;
+  },
 ): Promise<void> {
   const config = loadConfig();
 
@@ -171,9 +186,49 @@ async function runStatus(
 
   spinner.stop();
 
-  const visibleMRs = options.hideEmpty
+  let visibleMRs = options.hideEmpty
     ? openMRs.filter((mr) => mr.hasChanges !== false)
     : openMRs;
+
+  if (options.filter) {
+    const needle = options.filter.toLowerCase();
+    visibleMRs = visibleMRs.filter((mr) =>
+      mr.project.name.toLowerCase().includes(needle),
+    );
+  }
+
+  if (options.sort) {
+    const sortCol = STATUS_COLUMNS.find(
+      (c) => c.toLowerCase() === options.sort!.toLowerCase(),
+    );
+    if (!sortCol) {
+      console.log(
+        chalk.red(
+          `Invalid --sort column "${options.sort}". Valid columns: ${STATUS_COLUMNS.join(', ')}.`,
+        ),
+      );
+      return;
+    }
+    const keyFor = (mr: OpenMergeRequest): string => {
+      switch (sortCol) {
+        case 'Groups':
+          return mr.groups.join(', ');
+        case 'Project':
+          return mr.project.name;
+        case 'State':
+          return mr.state ?? '';
+        case 'Pipeline':
+          return mr.pipeline?.status ?? '';
+        case 'URL':
+          return mr.mrUrl ?? '';
+        default:
+          return '';
+      }
+    };
+    visibleMRs = [...visibleMRs].sort((a, b) =>
+      keyFor(a).localeCompare(keyFor(b), undefined, { sensitivity: 'base' }),
+    );
+  }
 
   if (visibleMRs.length === 0) {
     console.log(chalk.green('\nNo open merge requests.'));
@@ -181,7 +236,7 @@ async function runStatus(
   }
 
   const table = new Table({
-    head: ['Groups', 'Project', 'State', 'Pipeline', 'URL'],
+    head: STATUS_COLUMNS,
     style: { head: ['cyan'] },
   });
 
@@ -203,7 +258,11 @@ async function runStatus(
   if (mergedCount > 0)
     parts.push(chalk.dim(`${mergedCount} merged (fallback)`));
   const arrow = `${pair.sourceEnv.name} → ${pair.targetEnv.name}`;
-  const filterNote = options.hideEmpty ? chalk.dim(' · empty MRs hidden') : '';
+  const notes: string[] = [];
+  if (options.hideEmpty) notes.push('empty MRs hidden');
+  if (options.filter) notes.push(`filter: "${options.filter}"`);
+  if (options.sort) notes.push(`sort: ${options.sort}`);
+  const filterNote = notes.length ? chalk.dim(` · ${notes.join(' · ')}`) : '';
   console.log(
     `\n${parts.join(', ')} ${chalk.dim(`MR(s) (${type}: ${arrow}):`)}${filterNote}`,
   );

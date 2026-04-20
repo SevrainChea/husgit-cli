@@ -17,6 +17,7 @@ import {
   promptInput,
   promptProjectMultiSelect,
 } from '../ui/prompts.js';
+import { copyToClipboard } from '../utils/clipboard.js';
 import type { MergeRequestResult, ProjectConfig } from '../types.js';
 
 export function releaseCommand(): Command {
@@ -45,13 +46,24 @@ async function runRelease(
 ): Promise<void> {
   const config = loadConfig();
 
+  const sortedEnvs = [...config.environments].sort((a, b) => a.order - b.order);
+  const lastEnv = sortedEnvs[sortedEnvs.length - 1];
+
   // Resolve source environment
   let sourceEnv: string;
   if (sourceEnvArg) {
     sourceEnv = sourceEnvArg;
+    if (lastEnv && sourceEnv === lastEnv.name) {
+      console.log(
+        chalk.red(
+          `Cannot release from "${sourceEnv}": it is the last environment in the flow.`,
+        ),
+      );
+      return;
+    }
   } else {
-    const releasableEnvs = config.environments.filter(
-      (_e, i) => i < config.environments.length - 1,
+    const releasableEnvs = sortedEnvs.filter(
+      (e) => !lastEnv || e.name !== lastEnv.name,
     );
     if (releasableEnvs.length === 0) {
       console.log(chalk.red('Not enough environments to release.'));
@@ -155,8 +167,18 @@ async function runRelease(
   spinner.stop();
   printResults(results);
 
+  const tipCmd = `husgit status release ${sourceEnv}`;
+  let copied = false;
+  try {
+    copyToClipboard(tipCmd);
+    copied = true;
+  } catch {
+    // clipboard unavailable — fall back to plain tip
+  }
   console.log(
-    chalk.dim(`\nTip: track MR state with: husgit status release ${sourceEnv}`),
+    chalk.dim(
+      `\nTip: track MR state with: ${tipCmd}${copied ? chalk.green(' (copied to clipboard)') : ''}`,
+    ),
   );
 }
 

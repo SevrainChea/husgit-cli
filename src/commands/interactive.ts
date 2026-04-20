@@ -16,6 +16,7 @@ type MenuAction =
   | 'backport'
   | 'status'
   | 'config'
+  | 'completion'
   | 'exit';
 
 type GroupAction = 'add' | 'add-project' | 'list' | 'remove' | 'back';
@@ -59,6 +60,7 @@ export async function interactiveMenu(): Promise<void> {
       { name: 'Back-port', value: 'backport' },
       { name: 'Status', value: 'status' },
       { name: 'Export Config', value: 'config' },
+      { name: 'Shell Completion', value: 'completion' },
       { name: 'Exit', value: 'exit' },
     ]);
   } catch (err) {
@@ -105,6 +107,22 @@ export async function interactiveMenu(): Promise<void> {
         const { configExportCommand } = await import('./config/export.js');
         const cmd = configExportCommand();
         await cmd.parseAsync(['node', 'export']);
+        break;
+      }
+
+      case 'completion': {
+        const shell = await promptSelect<'bash' | 'zsh'>('Target shell:', [
+          { name: 'bash', value: 'bash' },
+          { name: 'zsh', value: 'zsh' },
+        ]);
+        const { completionCommand } = await import('./completion.js');
+        const cmd = completionCommand();
+        console.log(
+          chalk.dim(
+            `\n# Add this to your shell config to enable husgit completion:\n# eval "$(husgit completion ${shell})"\n`,
+          ),
+        );
+        await cmd.parseAsync(['node', 'completion', shell]);
         break;
       }
 
