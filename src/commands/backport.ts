@@ -17,6 +17,7 @@ import {
   promptInput,
   promptProjectMultiSelect,
 } from '../ui/prompts.js';
+import { copyToClipboard } from '../utils/clipboard.js';
 import type { MergeRequestResult, ProjectConfig } from '../types.js';
 
 export function backportCommand(): Command {
@@ -47,12 +48,25 @@ async function runBackport(
 ): Promise<void> {
   const config = loadConfig();
 
+  const sortedEnvs = [...config.environments].sort((a, b) => a.order - b.order);
+  const firstEnv = sortedEnvs[0];
+
   // Resolve source environment
   let sourceEnv: string;
   if (sourceEnvArg) {
     sourceEnv = sourceEnvArg;
+    if (firstEnv && sourceEnv === firstEnv.name) {
+      console.log(
+        chalk.red(
+          `Cannot backport from "${sourceEnv}": it is the first environment in the flow.`,
+        ),
+      );
+      return;
+    }
   } else {
-    const backportableEnvs = config.environments.filter((_e, i) => i > 0);
+    const backportableEnvs = sortedEnvs.filter(
+      (e) => !firstEnv || e.name !== firstEnv.name,
+    );
     if (backportableEnvs.length === 0) {
       console.log(chalk.red('Not enough environments to backport.'));
       return;
@@ -157,9 +171,17 @@ async function runBackport(
   spinner.stop();
   printResults(results);
 
+  const tipCmd = `husgit status backport ${sourceEnv}`;
+  let copied = false;
+  try {
+    copyToClipboard(tipCmd);
+    copied = true;
+  } catch {
+    // clipboard unavailable — fall back to plain tip
+  }
   console.log(
     chalk.dim(
-      `\nTip: track MR state with: husgit status backport ${sourceEnv}`,
+      `\nTip: track MR state with: ${tipCmd}${copied ? chalk.green(' (copied to clipboard)') : ''}`,
     ),
   );
 }
